@@ -22,7 +22,13 @@
        });
 
   var tree = d3.layout.tree()
-    .size([600, 600]);
+    .value(function (d) { return d.key; })
+    .children(function (d) { return d.values; })
+    .size([h, w]);
+
+  var circles = {};
+  var paths = {};
+  var labels = {};
 
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
@@ -41,38 +47,38 @@
       .key(function (d) { return d.Brand; })
       .entries(salesData);
 
-    var nodes = tree.nodes(nestedData);
+    root = {};
+    root.values = nestedData;
 
-    debugger;
+    var nodes = tree.nodes(root);
+
+    var links = tree.links(nodes);
+
+    var node = canvas.selectAll(".node")
+      .data(nodes)
+      .enter()
+      .append("g")
+        .attr("class", "node")
+        .attr("transform", function (d) {
+          return "translate(" + d.x + "," + d.y + ")";
+        });
+
+    node.append("circle")
+      .attr("r", 5)
+      .attr("fill", "steelblue");
+
+    node.append("text")
+      .text(function (d) {
+        return d.value;
+      });
+
+    canvas.selectAll(".link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("fill", "none")
+      .attr("stroke", "#ADADAD")
+      .attr("d", diagonal);
   });
-
-
-
-
-  var links = tree.links(nodes);
-
-  var node = canvas.selectAll(".node")
-    .data(nodes)
-    .enter()
-    .append("g")
-      .attr("class", "node")
-      .attr("transform", "translate(" + d.y + "," + d.x + ")");
-
-  node.append("circle")
-    .attr("r", 5)
-    .attr("fill", "steelblue");
-
-  node.append("text")
-    .text(function (d) {
-      return d.name;
-    });
-
-  canvas.selectAll(".link")
-    .data(links)
-    .enter()
-    .append("path")
-    .attr("class", "link")
-    .attr("fill", "none")
-    .attr("stroke", "#ADADAD")
-    .attr("d", diagonal);
 }());
