@@ -3,18 +3,25 @@
   var Converter = App.Converter;
   var d3 = App.d3;
 
-  var m = [20, 120, 20, 120],
-        w = 1280 - m[1] - m[3],
-        h = 900 - m[0] - m[2],
-        i = 0,
-        root = {};
+  // var m = [20, 120, 20, 120],
+  //       w = 1280 - m[1] - m[3],
+  //       h = 900 - m[0] - m[2],
+  //       root = {};
 
-  // tree.children(function (d) { return d.values; }).size([h, w]);
+  // var m = [20, 120, 20, 120],
+  //   w = $(document).width(),
+  //   h = $(document).height();
+
+  var w = $(document).width(),
+    h = $(document).height(),
+    xOffset = w * 0.1,
+    yOffset = h * 0.1;
+
   var canvas = d3.select(".main-graph").append("svg")
-    .attr("width", w + m[1] + m[3])
-    .attr("height", h + m[0] + m[2])
+    .attr("width", w)
+    .attr("height", h)
     .append("g")
-      .attr("transform", "translate(" + m[3] + "," + m[0] + ")");
+      .attr("transform", "translate(" + yOffset + "," + xOffset + ")");
 
   var diagonal = d3.svg.diagonal()
        .projection(function (d) {
@@ -22,9 +29,8 @@
        });
 
   var tree = d3.layout.tree()
-    .value(function (d) { return d.key; })
     .children(function (d) { return d.values; })
-    .size([h, w]);
+    .size([h - (xOffset * 2), w - (yOffset * 2)]);
 
   var circles = {};
   var paths = {};
@@ -60,7 +66,7 @@
       .append("g")
         .attr("class", "node")
         .attr("transform", function (d) {
-          return "translate(" + d.x + "," + d.y + ")";
+          return "translate(" + d.y + "," + d.x + ")";
         });
 
     node.append("circle")
@@ -69,7 +75,7 @@
 
     node.append("text")
       .text(function (d) {
-        return d.value;
+        return d.key;
       });
 
     canvas.selectAll(".link")
