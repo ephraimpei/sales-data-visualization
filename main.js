@@ -37,6 +37,10 @@
       DataStore.fillRawData(d);
     });
 
+    DataStore.setRolledUpData("Product");
+    DataStore.setRolledUpData("Brand");
+    DataStore.setRolledUpData("Family");
+
     var salesData = DataStore.getRawData();
 
     var nestedData = d3.nest()

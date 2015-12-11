@@ -4,13 +4,22 @@ var _rolledUpProdData = [];
 var _rolledUpBrandData = [];
 var _rolledUpFamilyData = [];
 
-function findObj(arr, targetObj) {
-  if (this.length === 0) { return null; }
+function findObj(arr, level, targetObj) {
+  if (arr.length === 0) { return null; }
 
-  for (var i = 0; i < this.length - 1; i++) {
-    if (this[i].id === targetObj.id) { return this[i]; }
+  for (var i = 0; i < arr.length - 1; i++) {
+    switch (level) {
+      case "Product":
+        if (arr[i].Product === targetObj.Product) { return arr[i]; }
+        break;
+      case "Brand":
+        if (arr[i].Brand === targetObj.Brand) { return arr[i]; }
+        break;
+      case "Family":
+        if (arr[i].Family === targetObj.Family) { return arr[i]; }
+        break;
+    }
   }
-
   return null;
 }
 
@@ -23,32 +32,37 @@ var DataStore = {
     return _rawData;
   },
 
-  setRolledUpProdData: function () {
-    _rawData.forEach(function (data) {
-      var productData = findObj(_rolledUpProdData, data);
-      debugger;
-      if (productData) {
-        productData.Sales += data.Sales;
-        productData.Target += data.Target;
-        productData.Percentage = Math.floor((productData.Sales / productData.Target) * 100);
+  setRolledUpData: function (level) {
+    var levelArr, baseArr;
+
+    switch (level) {
+      case "Product": levelArr = _rolledUpProdData; baseArr = _rawData; break;
+      case "Brand": levelArr = _rolledUpBrandData; baseArr = _rolledUpProdData; break;
+      case "Family": levelArr = _rolledUpFamilyData; baseArr = _rolledUpBrandData; break;
+    }
+
+    baseArr.forEach(function (data) {
+      var levelData = findObj(levelArr, level, data);
+
+      if (levelData) {
+        console.log(levelData.Sales, level, "before");
+        levelData.Sales += data.Sales;
+        levelData.Target += data.Target;
+        levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
+        console.log(levelData.Sales, level, "after");
       } else {
-        _rolledUpProdData.push(data);
+        levelArr.push(data);
       }
     });
   },
 
-  getRolledUpProdData: function () {
-    return _rolledUpProdData;
+  getRolledUpData: function (level) {
+    switch (level) {
+      case "Product": return _rolledUpProdData;
+      case "Brand": return _rolledUpBrandData;
+      case "Family": return _rolledUpFamilyData;
+    }
   },
-
-  setRolledUpBrandData: function () {
-
-  },
-
-  setRolledUpFamilyData: function () {
-
-  }
-
 };
 
 module.exports = DataStore;
