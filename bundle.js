@@ -7,19 +7,23 @@ var _rolledUpFamilyData = [];
 function findObj(arr, level, targetObj) {
   if (arr.length === 0) { return null; }
 
-  for (var i = 0; i < arr.length - 1; i++) {
-    switch (level) {
-      case "Product":
-        if (arr[i].Product === targetObj.Product) { return arr[i]; }
-        break;
-      case "Brand":
-        if (arr[i].Brand === targetObj.Brand) { return arr[i]; }
-        break;
-      case "Family":
-        if (arr[i].Family === targetObj.Family) { return arr[i]; }
-        break;
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i].key === targetObj[level]) {
+      return arr[i];
     }
+    // switch (level) {
+    //   case "Product":
+    //     if (arr[i].key === targetObj.Product) { target = arr[i]; }
+    //     break;
+    //   case "Brand":
+    //     if (arr[i].key === targetObj.Brand) { target = arr[i]; }
+    //     break;
+    //   case "Family":
+    //     if (arr[i].key === targetObj.Family) { target = arr[i]; }
+    //     break;
+    // }
   }
+
   return null;
 }
 
@@ -31,6 +35,21 @@ var DataStore = {
   getRawData: function () {
     return _rawData;
   },
+
+  // getData: function (depth, key) {
+  //   switch (depth) {
+  //     case 1: this.getFamilyObj(key); break;
+  //     case 2: this.getBrandObj(key); break;
+  //     case 3: this.getProductObj(key); break;
+  //     default: return {};
+  //   }
+  // },
+  //
+  // getFamilyObj: function (value) {
+  //   for (var idx in _rolledUpFamilyData) {
+  //     if (_rolledUpFamilyData[idx])
+  //   }
+  // },
 
   setRolledUpData: function (level) {
     var levelArr, baseArr;
@@ -45,12 +64,11 @@ var DataStore = {
       var levelData = findObj(levelArr, level, data);
 
       if (levelData) {
-        console.log(levelData.Sales, level, "before");
         levelData.Sales += data.Sales;
         levelData.Target += data.Target;
         levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
-        console.log(levelData.Sales, level, "after");
       } else {
+        data.key = data[level];
         levelArr.push(data);
       }
     });

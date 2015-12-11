@@ -42,7 +42,7 @@
     DataStore.setRolledUpData("Family");
 
     var salesData = DataStore.getRawData();
-
+    debugger;
     // populate territory drop down list
     var territories = d3.nest()
       .key(function (d) { return d.Territory; })
@@ -73,19 +73,27 @@
         .append("option")
         .text(function (d) { return d.key; })
         .attr("value", function(d) { return d.key; });
-  
+
     var nestedData = d3.nest()
       .key(function (d) { return d.Family; })
       .key(function (d) { return d.Brand; })
       .key(function (d) { return d.Product; })
       .entries(salesData);
-    // debugger;
+
     root = {};
     root.values = nestedData;
 
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
-    // debugger;
+
+    nodes.forEach (function (node) {
+      var levelObj = DataStore.getData(node.depth, node.key);
+
+      node.Sales = levelObj.Sales;
+      node.Target = levelObj.Target;
+      node.Percentage = levelObj.Percentage;
+    });
+
     var node = canvas.selectAll(".node")
       .data(nodes)
       .enter()
