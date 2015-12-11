@@ -43,18 +43,49 @@
 
     var salesData = DataStore.getRawData();
 
+    // populate territory drop down list
+    var territories = d3.nest()
+      .key(function (d) { return d.Territory; })
+      .entries(salesData)
+      .sort(function(a, b) {
+        var territoryA = parseInt(a.key.replace("Territory ", ""));
+        var territoryB = parseInt(b.key.replace("Territory ", ""));
+        return territoryA - territoryB;
+      });
+
+    d3.select(".sales-territory").selectAll("option")
+      .data(territories)
+      .enter()
+        .append("option")
+        .text(function (d) { return d.key; })
+        .attr("value", function(d) { return d.key; });
+
+    // populate state drop down list
+
+    var states = d3.nest()
+      .key(function (d) { return d.State; })
+      .sortKeys(d3.ascending)
+      .entries(salesData);
+
+    d3.select(".sales-state").selectAll("option")
+      .data(states)
+      .enter()
+        .append("option")
+        .text(function (d) { return d.key; })
+        .attr("value", function(d) { return d.key; });
+  
     var nestedData = d3.nest()
       .key(function (d) { return d.Family; })
       .key(function (d) { return d.Brand; })
       .key(function (d) { return d.Product; })
       .entries(salesData);
-
+    // debugger;
     root = {};
     root.values = nestedData;
 
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
-
+    // debugger;
     var node = canvas.selectAll(".node")
       .data(nodes)
       .enter()

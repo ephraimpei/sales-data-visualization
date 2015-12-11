@@ -44,11 +44,9 @@ var DataStore = {
       var levelData = findObj(levelArr, level, data);
 
       if (levelData) {
-        console.log(levelData.Sales, level, "before");
         levelData.Sales += data.Sales;
         levelData.Target += data.Target;
         levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
-        console.log(levelData.Sales, level, "after");
       } else {
         levelArr.push(data);
       }
