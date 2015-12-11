@@ -1,16 +1,7 @@
 (function () {
-  var $ = App.$;
-  var Converter = App.Converter;
-  var d3 = App.d3;
-
-  // var m = [20, 120, 20, 120],
-  //       w = 1280 - m[1] - m[3],
-  //       h = 900 - m[0] - m[2],
-  //       root = {};
-
-  // var m = [20, 120, 20, 120],
-  //   w = $(document).width(),
-  //   h = $(document).height();
+  var $ = module.$;
+  var d3 = module.d3;
+  var DataStore = module.DataStore;
 
   var w = $(document).width(),
     h = $(document).height(),
@@ -38,26 +29,26 @@
 
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
-    var salesData = [];
-
     csv.forEach(function (d) {
       d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
       d.Target = Number(d.Target.replace(/[^0-9\.]+/g,""));
       d.Percentage = Number(d.Percentage.replace("%",""));
 
-      salesData.push(d);
+      DataStore.fillRawData(d);
     });
+
+    var salesData = DataStore.getRawData();
 
     var nestedData = d3.nest()
       .key(function (d) { return d.Family; })
       .key(function (d) { return d.Brand; })
+      .key(function (d) { return d.Product; })
       .entries(salesData);
 
     root = {};
     root.values = nestedData;
 
     var nodes = tree.nodes(root);
-
     var links = tree.links(nodes);
 
     var node = canvas.selectAll(".node")

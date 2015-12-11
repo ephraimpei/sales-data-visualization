@@ -1,7 +1,3 @@
-var App = window.App || {};
-
-App.$ = require('jquery');
-App.Converter = require('csvtojson').Converter;
-App.d3 = require('d3');
-
-window.App = App;
+exports.$ = require('jquery');
+exports.d3 = require('d3');
+exports.DataStore = require('./data_store.js');

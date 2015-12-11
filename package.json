@@ -4,18 +4,12 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
-    "csvtojson": "^0.4.6",
     "d3": "^3.5.10",
-    "jade": "^1.11.0",
     "jquery": "^2.1.4",
     "jsdom": "^7.2.0"
   },
-  "devDependencies": {
-    "watchify": "^3.6.1"
-  },
   "scripts": {
-    "build": "browserify tools.js > bundle.js",
-    "watch": "watchify tools.js > bundle.js",
+    "build": "browserify tools.js --s module > bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
