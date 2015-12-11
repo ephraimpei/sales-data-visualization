@@ -86,6 +86,7 @@
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
 
+    // give nodes Sales, Target, and Percentage attributes
     nodes.forEach (function (node) {
       var levelObj = DataStore.getLevelData(node.depth, node.key);
       node.Sales = levelObj.Sales;
@@ -103,9 +104,6 @@
         .attr("Percentage", function (d) { return d.Percentage; })
         .attr("transform", function (d) {
           return "translate(" + d.y + "," + d.x + ")";
-        })
-        .on("mouseover", function(e) {
-
         });
 
     var totalSales = DataStore.getGlobalObj().Sales;
@@ -122,6 +120,9 @@
         return d.key;
       });
 
+    node.append("div")
+      .attr("class", "tooltip");
+
     canvas.selectAll(".link")
       .data(links)
       .enter()
@@ -130,5 +131,20 @@
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
       .attr("d", diagonal);
+
+    // add listeners
+    $(".node").on("mouseover", function (e) {
+      var sales = parseInt(e.currentTarget.getAttribute("Sales"));
+      var salesUSDFormat = sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
+      var target = parseInt(e.currentTarget.getAttribute("Target"));
+      var targetUSDFormat = target.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
+      var percent = parseInt(e.currentTarget.getAttribute("Percentage"));
+
+      var tooltipContents =
+        "<table><tr><th>Sales</th><th>Target</th><th>Percent</th></tr>" +
+        "<tr><td>" + salesUSDFormat + "</td><td>" + targetUSDFormat + "</td><td>" + percent + "</td></tr></table>";
+
+      $(e.currentTarget).find(".tooltip").append(tooltipContents);
+    });
   });
 }());
