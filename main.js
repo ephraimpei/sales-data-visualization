@@ -42,7 +42,7 @@
     DataStore.setRolledUpData("Family");
 
     var salesData = DataStore.getRawData();
-    debugger;
+
     // populate territory drop down list
     var territories = d3.nest()
       .key(function (d) { return d.Territory; })
@@ -87,8 +87,7 @@
     var links = tree.links(nodes);
 
     nodes.forEach (function (node) {
-      var levelObj = DataStore.getData(node.depth, node.key);
-
+      var levelObj = DataStore.getLevelData(node.depth, node.key);
       node.Sales = levelObj.Sales;
       node.Target = levelObj.Target;
       node.Percentage = levelObj.Percentage;
@@ -99,12 +98,23 @@
       .enter()
       .append("g")
         .attr("class", "node")
+        .attr("Sales", function (d) { return d.Sales; })
+        .attr("Target", function (d) { return d.Target; })
+        .attr("Percentage", function (d) { return d.Percentage; })
         .attr("transform", function (d) {
           return "translate(" + d.y + "," + d.x + ")";
+        })
+        .on("mouseover", function(e) {
+
         });
 
+    var totalSales = DataStore.getGlobalObj().Sales;
+
     node.append("circle")
-      .attr("r", 5)
+      .attr("r", function (d) {
+        var salesPercent = d.Sales / totalSales;
+        return salesPercent * 50;
+      })
       .attr("fill", "steelblue");
 
     node.append("text")
