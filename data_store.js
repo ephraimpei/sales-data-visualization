@@ -82,12 +82,16 @@ var DataStore = {
       if (levelData) {
         levelData.Sales += data.Sales;
         levelData.Target += data.Target;
-        levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
       } else {
         var copy = Object.assign({}, data);
         copy.key = copy[level];
         levelArr.push(copy);
       }
+    });
+
+    // calculate percentage
+    levelArr.forEach(function (levelData) {
+      levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
     });
   },
 

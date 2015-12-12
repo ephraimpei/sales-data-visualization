@@ -5,6 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "d3": "^3.5.10",
+    "d3-tip": "^0.6.7",
     "jquery": "^2.1.4",
     "jsdom": "^7.2.0",
     "watchify": "^3.6.1"

@@ -1,6 +1,7 @@
 (function () {
   var $ = module.$;
   var d3 = module.d3;
+  var d3tip = module.d3tip;
   var DataStore = module.DataStore;
 
   var w = $(document).width(),
@@ -8,11 +9,30 @@
     xOffset = w * 0.1,
     yOffset = h * 0.1;
 
+  var tip = d3tip(d3)()
+    .attr('class', 'd3-tip')
+    .html(function(d) {
+      var sales = d.Sales;
+      var salesUSDFormat = sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
+
+      var target = d.Target;
+      var targetUSDFormat = target.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
+
+      var percent = d.Percentage.toString() + "%";
+
+      return (
+        "<table><tr><th>Sales</th><th>Target</th><th>Percent</th></tr>" +
+        "<tr><td>" + salesUSDFormat + "</td><td>" + targetUSDFormat + "</td><td>" + percent + "</td></tr></table>"
+      );
+    });
+
   var canvas = d3.select(".main-graph").append("svg")
     .attr("width", w)
     .attr("height", h)
     .append("g")
       .attr("transform", "translate(" + yOffset + "," + xOffset + ")");
+
+  canvas.call(tip);
 
   var diagonal = d3.svg.diagonal()
        .projection(function (d) {
@@ -61,7 +81,6 @@
         .attr("value", function(d) { return d.key; });
 
     // populate state drop down list
-
     var states = d3.nest()
       .key(function (d) { return d.State; })
       .sortKeys(d3.ascending)
@@ -78,6 +97,7 @@
       .key(function (d) { return d.Family; })
       .key(function (d) { return d.Brand; })
       .key(function (d) { return d.Product; })
+      .rollup(function(leaves) {})
       .entries(salesData);
 
     root = {};
@@ -104,7 +124,9 @@
         .attr("Percentage", function (d) { return d.Percentage; })
         .attr("transform", function (d) {
           return "translate(" + d.y + "," + d.x + ")";
-        });
+        })
+        .on("mouseover", tip.show)
+        .on("mouseout", tip.hide);
 
     var totalSales = DataStore.getGlobalObj().Sales;
 
@@ -120,9 +142,6 @@
         return d.key;
       });
 
-    node.append("div")
-      .attr("class", "tooltip");
-
     canvas.selectAll(".link")
       .data(links)
       .enter()
@@ -131,20 +150,5 @@
       .attr("fill", "none")
       .attr("stroke", "#ADADAD")
       .attr("d", diagonal);
-
-    // add listeners
-    $(".node").on("mouseover", function (e) {
-      var sales = parseInt(e.currentTarget.getAttribute("Sales"));
-      var salesUSDFormat = sales.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
-      var target = parseInt(e.currentTarget.getAttribute("Target"));
-      var targetUSDFormat = target.toLocaleString('en-US', { style: 'currency', currency: 'USD' }).slice(0,-3);
-      var percent = parseInt(e.currentTarget.getAttribute("Percentage"));
-
-      var tooltipContents =
-        "<table><tr><th>Sales</th><th>Target</th><th>Percent</th></tr>" +
-        "<tr><td>" + salesUSDFormat + "</td><td>" + targetUSDFormat + "</td><td>" + percent + "</td></tr></table>";
-
-      $(e.currentTarget).find(".tooltip").append(tooltipContents);
-    });
   });
 }());
