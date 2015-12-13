@@ -11,12 +11,14 @@
     "jsdom": "^7.2.0"
   },
   "engines": {
-    "node": "5.1.0"
+    "node": "5.1.0",
+    "npm": "3.3.12"
   },
   "scripts": {
     "build": "browserify tools.js --s module > bundle.js",
     "watch": "watchify tools.js --s module -o bundle.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
   },
   "author": "Ephraim Pei",
   "license": "ISC",
