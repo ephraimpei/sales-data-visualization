@@ -160,64 +160,19 @@
         .text(function (d) { return d.key; })
         .attr("value", function(d) { return d.key; });
 
-    // var nestedData = d3.nest()
-    //   .key(function (d) { return d.Family; })
-    //   .key(function (d) { return d.Brand; })
-    //   .key(function (d) { return d.Product; })
-    //   .rollup(function(leaves) {})
-    //   .entries(salesData);
-    //
-    // root = {};
-    // root.values = nestedData;
-
-    // var nodes = tree.nodes(root);
-    // var links = tree.links(nodes);
-
-    // give nodes Sales, Target, and Percentage attributes
-    // resetNodeAttr(nodes);
-
-    // var node = canvas.selectAll(".node")
-    //   .data(nodes)
-    //   .enter()
-    //   .append("g")
-    //     .attr("class", "node")
-    //     .attr("Sales", function (d) { return d.Sales; })
-    //     .attr("Target", function (d) { return d.Target; })
-    //     .attr("Percentage", function (d) { return d.Percentage; })
-    //     .attr("transform", function (d) {
-    //       return "translate(" + d.y + "," + d.x + ")";
-    //     })
-    //     .on("mouseover", tip.show)
-    //     .on("mouseout", tip.hide);
-    //
-    // var totalSales = DataStore.getGlobalObj().Sales;
-    //
-    // node.append("circle")
-    //   .attr("r", function (d) {
-    //     var salesPercent = d.Sales / totalSales;
-    //     return salesPercent * 50;
-    //   })
-    //   .attr("fill", "steelblue");
-    //
-    // node.append("text")
-    //   .text(function (d) {
-    //     return d.key;
-    //   });
-    //
-    // canvas.selectAll(".link")
-    //   .data(links)
-    //   .enter()
-    //   .append("path")
-    //   .attr("class", "link")
-    //   .attr("fill", "none")
-    //   .attr("stroke", "#ADADAD")
-    //   .attr("d", diagonal);
-
     // add event listeners for filters
     $(".sales-territory").on("change", function(event) {
-      var salesFilter = event.currentTarget.value;
+      var territoryFilter = event.currentTarget.value;
 
-      DataStore.setTerritoryFilter(salesFilter);
+      DataStore.setTerritoryFilter(territoryFilter);
+
+      drawNodes();
+    });
+
+    $(".sales-state").on("change", function(event) {
+      var stateFilter = event.currentTarget.value;
+
+      DataStore.setStateFilter(stateFilter);
 
       drawNodes();
     });

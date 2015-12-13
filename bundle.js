@@ -122,6 +122,12 @@ var DataStore = {
     this.filterData();
   },
 
+  setStateFilter: function(newFilter) {
+    _stateFilter = newFilter;
+
+    this.filterData();
+  },
+
   filterData: function () {
     _filteredData = [];
 
