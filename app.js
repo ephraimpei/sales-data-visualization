@@ -1,6 +1,8 @@
+var http = require("http");
 var express = require('express');
 var app = express();
 var path = require('path');
+var port = process.env.PORT || 3000;
 
 var index = path.join(__dirname + '/index.html');
 
@@ -10,5 +12,6 @@ app.get('/', function(req, res){
   res.sendFile(index);
 });
 
-app.listen(3000);
-console.log("listening on port 3000");
+var server = http.createServer(app);
+server.listen(port);
+console.log("listening on port " + port);
