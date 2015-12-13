@@ -3,6 +3,11 @@ var _rawData = [];
 var _rolledUpProdData = [];
 var _rolledUpBrandData = [];
 var _rolledUpFamilyData = [];
+var _territoryFilter = "All";
+var _stateFilter = "All";
+var _filteredData = [];
+
+var levels = ["Product", "Brand", "Family"];
 
 var DataStore = {
   findObj: function (arr, level, target) {
@@ -72,7 +77,7 @@ var DataStore = {
     var levelArr, baseArr;
 
     switch (level) {
-      case "Product": levelArr = _rolledUpProdData; baseArr = _rawData; break;
+      case "Product": levelArr = _rolledUpProdData; baseArr = _filteredData; break;
       case "Brand": levelArr = _rolledUpBrandData; baseArr = _rolledUpProdData; break;
       case "Family": levelArr = _rolledUpFamilyData; baseArr = _rolledUpBrandData; break;
     }
@@ -103,6 +108,66 @@ var DataStore = {
       case "Family": return _rolledUpFamilyData;
     }
   },
+
+  getFilters: function () {
+    return {
+      territory: _territoryFilter,
+      state: _stateFilter
+    };
+  },
+
+  setTerritoryFilter: function(newFilter) {
+    _territoryFilter = newFilter;
+
+    this.filterData();
+  },
+
+  filterData: function () {
+    _filteredData = [];
+
+    if (_territoryFilter === "All" && _stateFilter === "All") {
+      _filteredData = _rawData;
+    } else if (_territoryFilter === "All") {
+      _rawData.forEach(function (data) {
+        if (data.State === _stateFilter) {
+          _filteredData.push(data);
+        }
+      });
+    } else if (_stateFilter === "All") {
+      _rawData.forEach(function (data) {
+        if (data.Territory === _territoryFilter) {
+          _filteredData.push(data);
+        }
+      });
+    } else {
+      _rawData.forEach(function (data) {
+        if (data.Territory === _territoryFilter &&
+            data.State === _stateFilter) {
+          _filteredData.push(data);
+        }
+      });
+    }
+
+    this.calculateRolledUpData();
+  },
+
+  calculateRolledUpData: function () {
+    this.resetData();
+
+    levels.forEach(function (level) {
+      DataStore.setRolledUpData(level);
+    });
+  },
+
+  getFilteredData: function () {
+    return _filteredData;
+  },
+
+  resetData: function () {
+    _rolledUpProdData = [];
+    _rolledUpBrandData = [];
+    _rolledUpFamilyData = [];
+  }
 };
 
 module.exports = DataStore;

@@ -4,6 +4,73 @@
   var d3tip = module.d3tip;
   var DataStore = module.DataStore;
 
+  var drawNodes = function () {
+    d3.select("g").selectAll("*").remove();
+
+    var salesData = DataStore.getFilteredData();
+
+    var nestedData = d3.nest()
+      .key(function (d) { return d.Family; })
+      .key(function (d) { return d.Brand; })
+      .key(function (d) { return d.Product; })
+      .rollup(function(leaves) {})
+      .entries(salesData);
+
+    root = {};
+    root.values = nestedData;
+
+    var nodes = tree.nodes(root);
+    var links = tree.links(nodes);
+
+    resetNodeAttr(nodes);
+
+    var node = canvas.selectAll(".node")
+      .data(nodes)
+      .enter()
+      .append("g")
+        .attr("class", "node")
+        .attr("Sales", function (d) { return d.Sales; })
+        .attr("Target", function (d) { return d.Target; })
+        .attr("Percentage", function (d) { return d.Percentage; })
+        .attr("transform", function (d) {
+          return "translate(" + d.y + "," + d.x + ")";
+        })
+        .on("mouseover", tip.show)
+        .on("mouseout", tip.hide);
+
+    var totalSales = DataStore.getGlobalObj().Sales;
+
+    node.append("circle")
+      .attr("r", function (d) {
+        var salesPercent = d.Sales / totalSales;
+        return salesPercent * 50;
+      })
+      .attr("fill", "steelblue");
+
+    node.append("text")
+      .text(function (d) {
+        return d.key;
+      });
+
+    canvas.selectAll(".link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", "link")
+      .attr("fill", "none")
+      .attr("stroke", "#ADADAD")
+      .attr("d", diagonal);
+  };
+
+  var resetNodeAttr = function (nodes) {
+      nodes.forEach(function (node) {
+        var levelObj = DataStore.getLevelData(node.depth, node.key);
+        node.Sales = levelObj.Sales;
+        node.Target = levelObj.Target;
+        node.Percentage = levelObj.Percentage;
+      });
+    };
+
   var w = $(document).width(),
     h = $(document).height(),
     xOffset = w * 0.1,
@@ -43,10 +110,6 @@
     .children(function (d) { return d.values; })
     .size([h - (xOffset * 2), w - (yOffset * 2)]);
 
-  var circles = {};
-  var paths = {};
-  var labels = {};
-
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
     csv.forEach(function (d) {
@@ -57,21 +120,23 @@
       DataStore.fillRawData(d);
     });
 
-    DataStore.setRolledUpData("Product");
-    DataStore.setRolledUpData("Brand");
-    DataStore.setRolledUpData("Family");
+    var rawData = DataStore.getRawData();
 
-    var salesData = DataStore.getRawData();
+    DataStore.filterData();
+
+    drawNodes();
 
     // populate territory drop down list
     var territories = d3.nest()
       .key(function (d) { return d.Territory; })
-      .entries(salesData)
+      .entries(rawData)
       .sort(function(a, b) {
         var territoryA = parseInt(a.key.replace("Territory ", ""));
         var territoryB = parseInt(b.key.replace("Territory ", ""));
         return territoryA - territoryB;
       });
+
+    territories = [{key:"All"}].concat(territories);
 
     d3.select(".sales-territory").selectAll("option")
       .data(territories)
@@ -84,7 +149,9 @@
     var states = d3.nest()
       .key(function (d) { return d.State; })
       .sortKeys(d3.ascending)
-      .entries(salesData);
+      .entries(rawData);
+
+    states = [{key:"All"}].concat(states);
 
     d3.select(".sales-state").selectAll("option")
       .data(states)
@@ -93,62 +160,66 @@
         .text(function (d) { return d.key; })
         .attr("value", function(d) { return d.key; });
 
-    var nestedData = d3.nest()
-      .key(function (d) { return d.Family; })
-      .key(function (d) { return d.Brand; })
-      .key(function (d) { return d.Product; })
-      .rollup(function(leaves) {})
-      .entries(salesData);
+    // var nestedData = d3.nest()
+    //   .key(function (d) { return d.Family; })
+    //   .key(function (d) { return d.Brand; })
+    //   .key(function (d) { return d.Product; })
+    //   .rollup(function(leaves) {})
+    //   .entries(salesData);
+    //
+    // root = {};
+    // root.values = nestedData;
 
-    root = {};
-    root.values = nestedData;
-
-    var nodes = tree.nodes(root);
-    var links = tree.links(nodes);
+    // var nodes = tree.nodes(root);
+    // var links = tree.links(nodes);
 
     // give nodes Sales, Target, and Percentage attributes
-    nodes.forEach (function (node) {
-      var levelObj = DataStore.getLevelData(node.depth, node.key);
-      node.Sales = levelObj.Sales;
-      node.Target = levelObj.Target;
-      node.Percentage = levelObj.Percentage;
+    // resetNodeAttr(nodes);
+
+    // var node = canvas.selectAll(".node")
+    //   .data(nodes)
+    //   .enter()
+    //   .append("g")
+    //     .attr("class", "node")
+    //     .attr("Sales", function (d) { return d.Sales; })
+    //     .attr("Target", function (d) { return d.Target; })
+    //     .attr("Percentage", function (d) { return d.Percentage; })
+    //     .attr("transform", function (d) {
+    //       return "translate(" + d.y + "," + d.x + ")";
+    //     })
+    //     .on("mouseover", tip.show)
+    //     .on("mouseout", tip.hide);
+    //
+    // var totalSales = DataStore.getGlobalObj().Sales;
+    //
+    // node.append("circle")
+    //   .attr("r", function (d) {
+    //     var salesPercent = d.Sales / totalSales;
+    //     return salesPercent * 50;
+    //   })
+    //   .attr("fill", "steelblue");
+    //
+    // node.append("text")
+    //   .text(function (d) {
+    //     return d.key;
+    //   });
+    //
+    // canvas.selectAll(".link")
+    //   .data(links)
+    //   .enter()
+    //   .append("path")
+    //   .attr("class", "link")
+    //   .attr("fill", "none")
+    //   .attr("stroke", "#ADADAD")
+    //   .attr("d", diagonal);
+
+    // add event listeners for filters
+    $(".sales-territory").on("change", function(event) {
+      var salesFilter = event.currentTarget.value;
+
+      DataStore.setTerritoryFilter(salesFilter);
+
+      drawNodes();
     });
-
-    var node = canvas.selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("g")
-        .attr("class", "node")
-        .attr("Sales", function (d) { return d.Sales; })
-        .attr("Target", function (d) { return d.Target; })
-        .attr("Percentage", function (d) { return d.Percentage; })
-        .attr("transform", function (d) {
-          return "translate(" + d.y + "," + d.x + ")";
-        })
-        .on("mouseover", tip.show)
-        .on("mouseout", tip.hide);
-
-    var totalSales = DataStore.getGlobalObj().Sales;
-
-    node.append("circle")
-      .attr("r", function (d) {
-        var salesPercent = d.Sales / totalSales;
-        return salesPercent * 50;
-      })
-      .attr("fill", "steelblue");
-
-    node.append("text")
-      .text(function (d) {
-        return d.key;
-      });
-
-    canvas.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", "link")
-      .attr("fill", "none")
-      .attr("stroke", "#ADADAD")
-      .attr("d", diagonal);
   });
 }());
