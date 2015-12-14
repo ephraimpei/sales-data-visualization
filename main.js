@@ -1,4 +1,4 @@
-(function () {
+function main() {
   var $ = module.$;
   var d3 = module.d3;
   var d3tip = module.d3tip;
@@ -38,16 +38,14 @@
         .on("mouseover", tip.show)
         .on("mouseout", tip.hide);
 
-    var totalSales = DataStore.getGlobalObj().Sales;
-
     node.append("circle")
-      .attr("r", function (d) {
-        var salesPercent = d.Sales / totalSales;
-        return salesPercent * 50;
-      })
-      .attr("fill", "steelblue");
+      .attr("r", function (d) { return d.Radius; })
+      .attr("fill", "steelblue")
+      .style("fill-opacity", ".8");
 
     node.append("text")
+      .attr("text-anchor", "middle")
+      .attr("dy", function (d) { return -d.Radius - 5; })
       .text(function (d) {
         return d.key;
       });
@@ -63,13 +61,20 @@
   };
 
   var resetNodeAttr = function (nodes) {
-      nodes.forEach(function (node) {
-        var levelObj = DataStore.getLevelData(node.depth, node.key);
-        node.Sales = levelObj.Sales;
-        node.Target = levelObj.Target;
-        node.Percentage = levelObj.Percentage;
-      });
-    };
+    var totalSales = DataStore.getGlobalObj().Sales;
+    var nodeRadius = d3.scale.sqrt()
+      .domain([0, totalSales])
+      .range([0, 50]);
+
+    nodes.forEach(function (node) {
+      var levelObj = DataStore.getLevelData(node.depth, node.key);
+
+      node.Sales = levelObj.Sales;
+      node.Target = levelObj.Target;
+      node.Percentage = levelObj.Percentage;
+      node.Radius = nodeRadius(levelObj.Sales);
+    });
+  };
 
   var w = $(document).width(),
     h = $(document).height(),
@@ -177,4 +182,4 @@
       drawNodes();
     });
   });
-}());
+}
