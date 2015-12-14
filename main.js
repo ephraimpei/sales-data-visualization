@@ -59,6 +59,9 @@ function main() {
     // set key for global node;
     nodes[0].key = "All";
 
+    // set node attributes
+    resetNodeAttr(nodes);
+
     canvas.selectAll(".link")
       .data(links)
       .enter()
@@ -76,10 +79,13 @@ function main() {
       .attr("fill", "none")
       .attr("d", diagonal)
       .style("stroke", function (d) { return getLinkColor(d); })
-      .style("stroke-width", function (d) { return 40; })
-      .style("opacity", ".2");
-
-    resetNodeAttr(nodes);
+      .style("opacity", function (d) {
+          var parentDepth = d.parent ? d.parent.depth : 0;
+          return ((parentDepth + 1) / 4.5) + 0.2;
+        }
+      )
+      .style("stroke-linecap", "round")
+      .style("stroke-width", function (d) { return d.target.Radius; });
 
     var node = canvas.selectAll(".node")
       .data(nodes)
@@ -105,7 +111,7 @@ function main() {
         return d.Radius;
       })
       .attr("fill", function(d) { return getNodeColor(d); })
-      .style("fill-opacity", ".3")
+      .style("fill-opacity", ".5")
       .style("stroke", function(d) { return getNodeColor(d); })
       .style("stroke-width", "1.5px");
 
@@ -123,6 +129,7 @@ function main() {
 
   var nodeMouseEvent = function (d, type) {
     var sourceKey = d.parent ? d.parent.key : null;
+    var parentDepth = d.parent ? d.parent.depth : 0;
     var targetKey = d.key;
     var pathId = sourceKey + "-to-" + targetKey;
     var fontSize, fontWeight, circleOpacity, pathOpacity;
@@ -132,7 +139,7 @@ function main() {
       fontSize = "16px", fontWeight = "bold", circleOpacity = "1", pathOpacity = "0.8";
     } else {
       tip.hide(d);
-      fontSize = "14px", fontWeight = "normal", circleOpacity = "0.3", pathOpacity = "0.3";
+      fontSize = "14px", fontWeight = "normal", circleOpacity = "0.5", pathOpacity = "0.3";
     }
 
     d3.select(circles[targetKey]).transition().style("fill-opacity", circleOpacity);
@@ -189,8 +196,8 @@ function main() {
     });
 
   // set attributes for canvas
-  var w = $(document).width(),
-    h = $(document).height(),
+  var w = $(window).width(),
+    h = $(window).height(),
     xOffset = w * 0.1,
     yOffset = h * 0.2;
 

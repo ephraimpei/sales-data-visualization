@@ -11,11 +11,9 @@ This app provides the user with an interactive tree map that gets loaded accordi
 * HTML
 * CSS
 
-### Frameworks
-* Express.js
-
 ### Libraries and Technologies
 * Node
+* Express
 * Browserify
 * Watchify
 * d3
