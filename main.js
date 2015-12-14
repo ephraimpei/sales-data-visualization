@@ -56,24 +56,27 @@ function main() {
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
 
+    // set key for global node;
+    nodes[0].key = "All";
+
     canvas.selectAll(".link")
       .data(links)
       .enter()
       .append("path")
       .attr("class", function (d) { return "link"; })
       .attr("id", function (d) {
-        var sourceKey = d.source.key ? d.source.key : "All";
+        var sourceKey = d.source.key;
         var targetKey = d.target.key;
-        var linkId = sourceKey + "-to-" + targetKey;
+        var pathId = sourceKey + "-to-" + targetKey;
 
-        links[linkId] = this;
+        paths[pathId] = this;
 
-        return linkId;
+        return pathId;
       })
       .attr("fill", "none")
       .attr("d", diagonal)
       .style("stroke", function (d) { return getLinkColor(d); })
-      .style("stroke-width", function (d) { return d.target.Radius * 2; })
+      .style("stroke-width", function (d) { return 40; })
       .style("opacity", ".2");
 
     resetNodeAttr(nodes);
@@ -89,8 +92,8 @@ function main() {
         .attr("transform", function (d) {
           return "translate(" + d.y + "," + d.x + ")";
         })
-        .on("mouseover", nodeMouseOver)
-        .on("mouseout", nodeMouseOut)
+        .on("mouseover", function (d) { nodeMouseEvent(d, "over"); })
+        .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
         .on("click", function(d) {
           toggleNodes(d);
           updateCanvas(d);
@@ -111,28 +114,34 @@ function main() {
         labels[d.key] = this;
         return "middle";
       })
-      .attr("dy", function (d) { return -d.Radius - 5; })
+      .attr("x", -30)
+      .attr("font-size", "14px")
       .text(function (d) {
         return d.key;
       });
   };
 
-  var nodeMouseOver = function (d) {
-    tip.show(d);
+  var nodeMouseEvent = function (d, type) {
+    var sourceKey = d.parent ? d.parent.key : null;
+    var targetKey = d.key;
+    var pathId = sourceKey + "-to-" + targetKey;
+    var fontSize, fontWeight, circleOpacity, pathOpacity;
 
-    d3.select(labels[d.key]).transition().style("font-weight","bold").style("font-size","16px");
+    if (type === "over") {
+      tip.show(d);
+      fontSize = "16px", fontWeight = "bold", circleOpacity = "1", pathOpacity = "0.8";
+    } else {
+      tip.hide(d);
+      fontSize = "14px", fontWeight = "normal", circleOpacity = "0.3", pathOpacity = "0.3";
+    }
 
-    d3.select(circles[d.key]).transition().style("fill-opacity",0.8);
-
-    // highlightPath(d);
-  };
-
-  var nodeMouseOut = function (d) {
-    tip.hide(d);
-
-    d3.select(labels[d.key]).transition().style("font-weight","normal").style("font-size","12px");
-
-    d3.select(circles[d.key]).transition().style("fill-opacity", 0.3);
+    d3.select(circles[targetKey]).transition().style("fill-opacity", circleOpacity);
+    d3.select(labels[targetKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+    if (d.key !== "All") {
+      d3.select(circles[sourceKey]).transition().style("fill-opacity", circleOpacity);
+      d3.select(labels[sourceKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+      d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
+    }
   };
 
   var resetNodeAttr = function (nodes) {
@@ -183,7 +192,7 @@ function main() {
   var w = $(document).width(),
     h = $(document).height(),
     xOffset = w * 0.1,
-    yOffset = h * 0.1;
+    yOffset = h * 0.2;
 
   var canvas = d3.select(".main-graph").append("svg")
     .attr("width", w)
