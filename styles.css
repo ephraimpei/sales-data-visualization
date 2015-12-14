@@ -13,8 +13,22 @@
 .d3-tip {
   background: white;
   text-align: center;
+  border: 1px solid steelblue;
+  border-radius: 5px;
 }
 
-.d3-tip > table > tbody > tr > td {
+.d3-tip > table > tbody > tr > th, td {
   padding: 5px;
+}
+
+.d3-tip > table > tbody > tr > th {
+  border-bottom: 1px solid steelblue;
+}
+
+.d3-tip > table > tbody > tr > th, td {
+  border-right: 1px solid steelblue;
+}
+
+.d3-tip > table > tbody > tr > th:last-child, td:last-child {
+  border-right: 0;
 }

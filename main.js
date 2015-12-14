@@ -4,6 +4,32 @@ function main() {
   var d3tip = module.d3tip;
   var DataStore = module.DataStore;
 
+  var setNodeColors = function () {
+    nodeColors = {};
+
+    var levels = DataStore.getLevels().reverse();
+
+    levels.forEach(function (level, depth) {
+      depth++;
+
+      var levelDataArr = DataStore.getRolledUpData(level);
+
+      nodeColors[depth] = {};
+
+      levelDataArr.forEach(function (levelDataObj, i) {
+        nodeColors[depth][levelDataObj.key] = colors[(i + 1) % colors.length];
+      });
+    });
+  };
+
+  var getNodeColor = function (d) {
+    if (d.depth === 0) {
+      return "steelblue";
+    } else {
+      return nodeColors[d.depth][d.key];
+    }
+  };
+
   var drawNodes = function () {
     d3.select("g").selectAll("*").remove();
 
@@ -36,11 +62,15 @@ function main() {
           return "translate(" + d.y + "," + d.x + ")";
         })
         .on("mouseover", tip.show)
-        .on("mouseout", tip.hide);
+        .on("mouseout", tip.hide)
+        .on("click", function(d) {
+          toggleNodes(d);
+          updateCanvas(d);
+        });
 
     node.append("circle")
       .attr("r", function (d) { return d.Radius; })
-      .attr("fill", "steelblue")
+      .attr("fill", function(d) { return getNodeColor(d); })
       .style("fill-opacity", ".8");
 
     node.append("text")
@@ -76,11 +106,17 @@ function main() {
     });
   };
 
-  var w = $(document).width(),
-    h = $(document).height(),
-    xOffset = w * 0.1,
-    yOffset = h * 0.1;
+  function toggleNodes(d) {
+    if (d.children) {
+        d._children = d.children;
+        d.children = null;
+    } else {
+        d.children = d._children;
+        d._children = null;
+    }
+  }
 
+  // set attributes for tooltip
   var tip = d3tip(d3)()
     .attr('class', 'd3-tip')
     .html(function(d) {
@@ -97,6 +133,12 @@ function main() {
         "<tr><td>" + salesUSDFormat + "</td><td>" + targetUSDFormat + "</td><td>" + percent + "</td></tr></table>"
       );
     });
+
+  // set attributes for canvas
+  var w = $(document).width(),
+    h = $(document).height(),
+    xOffset = w * 0.1,
+    yOffset = h * 0.1;
 
   var canvas = d3.select(".main-graph").append("svg")
     .attr("width", w)
@@ -115,6 +157,10 @@ function main() {
     .children(function (d) { return d.values; })
     .size([h - (xOffset * 2), w - (yOffset * 2)]);
 
+  var colors = ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
+        "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
+        "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"];
+
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
     csv.forEach(function (d) {
@@ -125,9 +171,14 @@ function main() {
       DataStore.fillRawData(d);
     });
 
+    // populate raw data
     var rawData = DataStore.getRawData();
 
+    // populate filtered data
     DataStore.filterData();
+
+    // set colors for each level
+    setNodeColors();
 
     drawNodes();
 

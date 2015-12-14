@@ -6,9 +6,13 @@ var _territoryFilter = "All";
 var _stateFilter = "All";
 var _filteredData = [];
 
-var levels = ["Product", "Brand", "Family"];
+var _levels = ["Product", "Brand", "Family"];
 
 var DataStore = {
+  getLevels: function () {
+    return _levels.slice();
+  },
+
   findObj: function (arr, level, target) {
     if (arr.length === 0) { return null; }
 
@@ -34,7 +38,7 @@ var DataStore = {
   },
 
   getRawData: function () {
-    return _rawData;
+    return _rawData.slice();
   },
 
   getGlobalObj: function () {
@@ -83,7 +87,6 @@ var DataStore = {
 
     baseArr.forEach(function (data) {
       var levelData = DataStore.findObj(levelArr, level, data);
-
       if (levelData) {
         levelData.Sales += data.Sales;
         levelData.Target += data.Target;
@@ -102,9 +105,9 @@ var DataStore = {
 
   getRolledUpData: function (level) {
     switch (level) {
-      case "Product": return _rolledUpProdData;
-      case "Brand": return _rolledUpBrandData;
-      case "Family": return _rolledUpFamilyData;
+      case "Product": return _rolledUpProdData.slice();
+      case "Brand": return _rolledUpBrandData.slice();
+      case "Family": return _rolledUpFamilyData.slice();
     }
   },
 
@@ -159,13 +162,13 @@ var DataStore = {
   calculateRolledUpData: function () {
     this.resetData();
 
-    levels.forEach(function (level) {
+    _levels.forEach(function (level) {
       DataStore.setRolledUpData(level);
     });
   },
 
   getFilteredData: function () {
-    return _filteredData;
+    return _filteredData.slice();
   },
 
   resetData: function () {
