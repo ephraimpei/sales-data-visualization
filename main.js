@@ -9,6 +9,9 @@ function main() {
 
     var levels = DataStore.getLevels().reverse();
 
+    // set color for global Object
+    nodeColors[0] = { "All": "steelblue"};
+
     levels.forEach(function (level, depth) {
       depth++;
 
@@ -23,11 +26,13 @@ function main() {
   };
 
   var getNodeColor = function (d) {
-    if (d.depth === 0) {
-      return "steelblue";
-    } else {
-      return nodeColors[d.depth][d.key];
-    }
+    return d.key ? nodeColors[d.depth][d.key]: nodeColors[d.depth]["All"];
+  };
+
+  var getLinkColor = function (d) {
+    var source = d.source;
+
+    return source.depth === 0 ? nodeColors[source.depth]["All"] : nodeColors[source.depth][source.key];
   };
 
   var drawNodes = function () {
@@ -43,10 +48,33 @@ function main() {
       .entries(salesData);
 
     root = {};
+    labels = {};
+    paths = {};
+    circles = {};
     root.values = nestedData;
 
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
+
+    canvas.selectAll(".link")
+      .data(links)
+      .enter()
+      .append("path")
+      .attr("class", function (d) { return "link"; })
+      .attr("id", function (d) {
+        var sourceKey = d.source.key ? d.source.key : "All";
+        var targetKey = d.target.key;
+        var linkId = sourceKey + "-to-" + targetKey;
+
+        links[linkId] = this;
+
+        return linkId;
+      })
+      .attr("fill", "none")
+      .attr("d", diagonal)
+      .style("stroke", function (d) { return getLinkColor(d); })
+      .style("stroke-width", function (d) { return d.target.Radius * 2; })
+      .style("opacity", ".2");
 
     resetNodeAttr(nodes);
 
@@ -61,33 +89,50 @@ function main() {
         .attr("transform", function (d) {
           return "translate(" + d.y + "," + d.x + ")";
         })
-        .on("mouseover", tip.show)
-        .on("mouseout", tip.hide)
+        .on("mouseover", nodeMouseOver)
+        .on("mouseout", nodeMouseOut)
         .on("click", function(d) {
           toggleNodes(d);
           updateCanvas(d);
         });
 
     node.append("circle")
-      .attr("r", function (d) { return d.Radius; })
+      .attr("r", function (d) {
+        circles[d.key] = this;
+        return d.Radius;
+      })
       .attr("fill", function(d) { return getNodeColor(d); })
-      .style("fill-opacity", ".8");
+      .style("fill-opacity", ".3")
+      .style("stroke", function(d) { return getNodeColor(d); })
+      .style("stroke-width", "1.5px");
 
     node.append("text")
-      .attr("text-anchor", "middle")
+      .attr("text-anchor", function (d) {
+        labels[d.key] = this;
+        return "middle";
+      })
       .attr("dy", function (d) { return -d.Radius - 5; })
       .text(function (d) {
         return d.key;
       });
+  };
 
-    canvas.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", "link")
-      .attr("fill", "none")
-      .attr("stroke", "#ADADAD")
-      .attr("d", diagonal);
+  var nodeMouseOver = function (d) {
+    tip.show(d);
+
+    d3.select(labels[d.key]).transition().style("font-weight","bold").style("font-size","16px");
+
+    d3.select(circles[d.key]).transition().style("fill-opacity",0.8);
+
+    // highlightPath(d);
+  };
+
+  var nodeMouseOut = function (d) {
+    tip.hide(d);
+
+    d3.select(labels[d.key]).transition().style("font-weight","normal").style("font-size","12px");
+
+    d3.select(circles[d.key]).transition().style("fill-opacity", 0.3);
   };
 
   var resetNodeAttr = function (nodes) {
@@ -180,6 +225,7 @@ function main() {
     // set colors for each level
     setNodeColors();
 
+    // draw nodes on canvas
     drawNodes();
 
     // populate territory drop down list

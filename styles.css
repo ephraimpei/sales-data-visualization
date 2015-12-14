@@ -1,14 +1,13 @@
-/*.node {
-
+/* reset */
+html, body, div, label {
+  font: inherit;
+  color: inherit;
+  background: inherit;
 }
 
-.node.inactive {
-  visibility: hidden;
+body {
+  font-family: sans-serif;
 }
-
-.node.active {
-  visibility: visible;
-}*/
 
 .d3-tip {
   background: white;
