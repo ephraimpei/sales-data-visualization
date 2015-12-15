@@ -97,7 +97,6 @@ function main() {
       .enter()
       .append("g")
         .attr("class", "node")
-        .attr("hideChildren", false)
         .attr("Sales", function (d) { return d.Sales; })
         .attr("Target", function (d) { return d.Target; })
         .attr("Percentage", function (d) { return d.Percentage; })
@@ -134,10 +133,6 @@ function main() {
   };
 
   var nodeMouseEvent = function (d, type) {
-    var sourceKey = d.parent ? d.parent.key : null;
-    var parentDepth = d.parent ? d.parent.depth : 0;
-    var targetKey = d.key;
-    var pathId = sourceKey + "-to-" + targetKey;
     var fontSize, fontWeight, circleOpacity, pathOpacity;
 
     if (type === "over") {
@@ -148,13 +143,34 @@ function main() {
       fontSize = "14px", fontWeight = "normal", circleOpacity = "0.5", pathOpacity = "0.3";
     }
 
-    d3.select(circles[targetKey]).transition().style("fill-opacity", circleOpacity);
-    d3.select(labels[targetKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
-    if (d.key !== "All") {
-      d3.select(circles[sourceKey]).transition().style("fill-opacity", circleOpacity);
-      d3.select(labels[sourceKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
-      d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
+    function highlightPathAndNodes(d) {
+      var targetKey = d.key;
+
+      d3.select(circles[d.key]).transition().style("fill-opacity", circleOpacity);
+      d3.select(labels[d.key]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+
+      if (d.parent) {
+        var sourceKey = d.parent.key;
+        var pathId = sourceKey + "-to-" + targetKey;
+        
+        d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
+      } else {
+        return;
+      }
+
+      highlightPathAndNodes(d.parent);
     }
+
+    highlightPathAndNodes(d);
+    // d3.select(circles[d.key]).transition().style("fill-opacity", circleOpacity);
+    // d3.select(labels[d.key]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+    // if (d.key === "All") { return; }
+    // else {
+    //   d3.select(circles[sourceKey]).transition().style("fill-opacity", circleOpacity);
+    //   d3.select(labels[sourceKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+    //   d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
+    //
+    // }
   };
 
   var resetNodeAttr = function (nodes) {
@@ -170,41 +186,41 @@ function main() {
       node.Target = levelObj.Target;
       node.Percentage = levelObj.Percentage;
       node.Radius = nodeRadius(levelObj.Sales);
+      node.hidden = false;
     });
   };
 
   var toggleNodes = function (d) {
-    if (d.hideChildren) {
-      if (d.children) {
-        d.children = d._children;
-        d.children.forEach(toggleNodes);
-        d._children = null;
-      }
-
-      d.hideChildren = false;
-    } else {
-      if (d.children) {
-        d._children = d.children;
-        d._children.forEach(toggleNodes);
-        d.children = null;
-      }
-
-      d.hideChildren = true;
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(toggleNodes);
+      d.children = null;
+      d.hidden = true;
+    }
+    else {
+      d.children = d._children;
+      d.children.forEach(toggleNodes);
+      d._children = null;
+      d.hidden = false;
     }
   };
 
   var update = function (source) {
-    if (source.hideChildren) {
-      nodes = tree.nodes(root).filter( function (d) { return d.hideChildren; });
+    if (source.hidden) {
+      source.hidden = false;
+      nodes = tree.nodes(root).filter( function (d) { return d.hidden; });
       removeNodes(source, nodes);
     } else {
-      nodes = tree.nodes(root).filter( function (d) { return !d.hideChildren; });
+      source.hidden = true;
+      nodes = tree.nodes(root).filter( function (d) { return !d.hidden; });
       drawNodes(nodes);
     }
   };
 
   var removeNodes = function (source, nodes) {
-    var nodeExit = canvas.selectAll(".node").data(nodes).exit().transition()
+    canvas.selectAll(".node").data(nodes)
+      .exit()
+      .transition()
       .duration(500)
       .attr("transform", function (d) {
         return "translate(" + source.y + "," + source.x + ")";
@@ -275,10 +291,9 @@ function main() {
       DataStore.fillRawData(d);
     });
 
-    // populate raw data
     var rawData = DataStore.getRawData();
 
-    // populate filtered data
+    // populate filtered data in DataStore
     DataStore.filterData();
 
     // set colors for each level
