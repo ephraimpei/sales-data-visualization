@@ -53,25 +53,36 @@ function main() {
     circles = {};
     root.values = nestedData;
 
-    var nodes = tree.nodes(root);
-
-    drawNodes(nodes);
+    update(root);
   };
 
-  var drawNodes = function (nodes) {
+  var update = function (source) {
+    var nodes = tree.nodes(root);
     var links = tree.links(nodes);
+    var duration = 500;
 
     // set key for global node;
     nodes[0].key = "All";
 
-    // set node attributes
+    // Set node attributes
     resetNodeAttr(nodes);
 
-    canvas.selectAll(".link")
-      .data(links)
-      .enter()
-      .append("path")
-      .attr("class", function (d) { return "link"; })
+    // Update the nodes…
+   var node = canvas.selectAll(".node").data(nodes);
+    // .data(nodes, function(d) { return !d.hidden; });
+
+   // Update the links...
+   var link = canvas.selectAll(".link").data(links);
+    // .data(links, function(d) { return !d.target.hidden; });
+
+   debugger;
+    // Enter any new links at the parent's previous pos.
+    link.enter().append("path")
+      .attr("class", "link")
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
       .attr("id", function (d) {
         var sourceKey = d.source.key;
         var targetKey = d.target.key;
@@ -82,7 +93,6 @@ function main() {
         return pathId;
       })
       .attr("fill", "none")
-      .attr("d", diagonal)
       .style("stroke", function (d) { return getLinkColor(d); })
       .style("opacity", function (d) {
           var parentDepth = d.parent ? d.parent.depth : 0;
@@ -92,25 +102,32 @@ function main() {
       .style("stroke-linecap", "round")
       .style("stroke-width", function (d) { return d.target.Radius; });
 
-    var node = canvas.selectAll(".node")
-      .data(nodes)
-      .enter()
-      .append("g")
-        .attr("class", "node")
-        .attr("Sales", function (d) { return d.Sales; })
-        .attr("Target", function (d) { return d.Target; })
-        .attr("Percentage", function (d) { return d.Percentage; })
-        .attr("transform", function (d) {
-          return "translate(" + d.y + "," + d.x + ")";
-        })
-        .on("mouseover", function (d) { nodeMouseEvent(d, "over"); })
-        .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
-        .on("click", function(d) {
-          toggleNodes(d);
-          update(d);
-        });
+    // Transition links to their new position.
+    link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
 
-    node.append("circle")
+    // Transition exiting nodes to the parent's new position.
+    link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+    // Enter any new nodes
+    var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("Sales", function (d) { return d.Sales; })
+      .attr("Target", function (d) { return d.Target; })
+      .attr("Percentage", function (d) { return d.Percentage; })
+      .attr("transform", function (d) { return "translate(" + source.y + "," + source.x + ")";})
+      .on("mouseover", function (d) { nodeMouseEvent(d, "over"); })
+      .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
+      .on("click", function (d) { toggleNodes(d); });
+
+    nodeEnter.append("circle")
       .attr("r", function (d) {
         circles[d.key] = this;
         return d.Radius;
@@ -120,16 +137,44 @@ function main() {
       .style("stroke", function(d) { return getNodeColor(d); })
       .style("stroke-width", "1.5px");
 
-    node.append("text")
+    nodeEnter.append("text")
       .attr("text-anchor", function (d) {
         labels[d.key] = this;
         return "middle";
       })
       .attr("x", -30)
       .attr("font-size", "14px")
-      .text(function (d) {
-        return d.key;
-      });
+      .text(function (d) { return d.key; });
+
+    // Transition nodes to their new position.
+    var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+    //
+    // nodeUpdate.select("circle")
+    //     .attr("r", 4.5)
+    //     .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+    //
+    // nodeUpdate.select("text")
+    //     .style("fill-opacity", 1);
+
+    // exit transition properties
+    var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+    nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+    nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+    // Stash the old positions for transition.
+    nodes.forEach(function(d) {
+      d.x0 = d.x;
+      d.y0 = d.y;
+    });
   };
 
   var nodeMouseEvent = function (d, type) {
@@ -152,7 +197,7 @@ function main() {
       if (d.parent) {
         var sourceKey = d.parent.key;
         var pathId = sourceKey + "-to-" + targetKey;
-        
+
         d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
       } else {
         return;
@@ -162,15 +207,6 @@ function main() {
     }
 
     highlightPathAndNodes(d);
-    // d3.select(circles[d.key]).transition().style("fill-opacity", circleOpacity);
-    // d3.select(labels[d.key]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
-    // if (d.key === "All") { return; }
-    // else {
-    //   d3.select(circles[sourceKey]).transition().style("fill-opacity", circleOpacity);
-    //   d3.select(labels[sourceKey]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
-    //   d3.select(paths[pathId]).transition().style("opacity", pathOpacity);
-    //
-    // }
   };
 
   var resetNodeAttr = function (nodes) {
@@ -193,43 +229,20 @@ function main() {
   var toggleNodes = function (d) {
     if (d.children) {
       d._children = d.children;
-      d._children.forEach(toggleNodes);
+      d._children.forEach(function (d) {
+        d.hidden = false;
+        toggleNodes(d);
+      });
       d.children = null;
-      d.hidden = true;
-    }
-    else {
+    } else if (d._children) {
       d.children = d._children;
-      d.children.forEach(toggleNodes);
+      d.children.forEach(function (d) {
+        d.hidden = true;
+        toggleNodes(d);
+      });
       d._children = null;
-      d.hidden = false;
     }
-  };
-
-  var update = function (source) {
-    if (source.hidden) {
-      source.hidden = false;
-      nodes = tree.nodes(root).filter( function (d) { return d.hidden; });
-      removeNodes(source, nodes);
-    } else {
-      source.hidden = true;
-      nodes = tree.nodes(root).filter( function (d) { return !d.hidden; });
-      drawNodes(nodes);
-    }
-  };
-
-  var removeNodes = function (source, nodes) {
-    canvas.selectAll(".node").data(nodes)
-      .exit()
-      .transition()
-      .duration(500)
-      .attr("transform", function (d) {
-        return "translate(" + source.y + "," + source.x + ")";
-      })
-      .remove();
-
-    nodeExit.select("circle").attr("r", 1e-6);
-
-    nodeExit.select("text").style("fill-opacity", 1e-6);
+    update(d);
   };
 
   // set attributes for tooltip
