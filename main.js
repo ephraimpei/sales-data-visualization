@@ -64,6 +64,8 @@ function main() {
     var links = tree.links(nodes);
     var duration = 500;
 
+    createObjectTrackers();
+
     // Set node attributes
     resetNodeAttr(nodes);
 
@@ -125,7 +127,7 @@ function main() {
 
     // Update the links...
     var link = canvas.selectAll("path.link").data(links, function (d) { return d.target.id; });
-    debugger;
+
     // Enter any new links at the parent's previous pos.
     link.enter().insert("path", "g")
       .attr("class", "link")
@@ -134,6 +136,7 @@ function main() {
         var o = { x: source.x0, y: source.y0 };
         return diagonal({source: o, target: o});
       })
+      .attr("d", diagonal)
       .attr("id", function (d) {
         var sourceKey = d.source.key;
         var targetKey = d.target.key;
@@ -228,13 +231,14 @@ function main() {
       d._values = d.values;
       d.values = null;
       d.children = null;
+      update(d);
     } else if (d._values) {
       d.children = d._children;
       d.values = d._values;
       d._children = null;
       d._values = null;
+      update(d);
     }
-    update(d);
   };
 
   // set attributes for tooltip
