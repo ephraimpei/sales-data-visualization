@@ -4,6 +4,12 @@ function main() {
   var d3tip = module.d3tip;
   var DataStore = module.DataStore;
 
+  var createObjectTrackers = function () {
+    labels = {};
+    paths = {};
+    circles = {};
+  };
+
   var setNodeColors = function () {
     nodeColors = {};
 
@@ -35,22 +41,19 @@ function main() {
     return source.depth === 0 ? nodeColors[source.depth]["All"] : nodeColors[source.depth][source.key];
   };
 
-  var refreshCanvas = function () {
-    d3.select("g").selectAll("*").remove();
-
-    var salesData = DataStore.getFilteredData();
-
+  var createRoot = function () {
     var nestedData = d3.nest()
       .key(function (d) { return d.Family; })
       .key(function (d) { return d.Brand; })
       .key(function (d) { return d.Product; })
       .rollup(function(leaves) {})
-      .entries(salesData);
+      .entries(DataStore.getFilteredData());
+
+    // root.children.forEach(toggleNodes);
 
     root = {};
-    labels = {};
-    paths = {};
-    circles = {};
+    root.x0 = (h - (xOffset * 2)) / 2;
+    root.y0 = 0;
     root.values = nestedData;
 
     update(root);
@@ -61,26 +64,74 @@ function main() {
     var links = tree.links(nodes);
     var duration = 500;
 
-    // set key for global node;
-    nodes[0].key = "All";
-
     // Set node attributes
     resetNodeAttr(nodes);
 
+    // set key for global node;
+    nodes[0].key = "All";
+
     // Update the nodes…
-   var node = canvas.selectAll(".node").data(nodes);
-    // .data(nodes, function(d) { return !d.hidden; });
+    var node = canvas.selectAll("g.node").data(nodes, function (d, i) {
+      return d.id || (d.id = ++i);
+    });
 
-   // Update the links...
-   var link = canvas.selectAll(".link").data(links);
-    // .data(links, function(d) { return !d.target.hidden; });
+    // Enter any new nodes
+    var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("id", function (d) { return d.key; })
+      .attr("Sales", function (d) { return d.Sales; })
+      .attr("Target", function (d) { return d.Target; })
+      .attr("Percentage", function (d) { return d.Percentage; })
+      .attr("transform", function (d) { return "translate(" + source.y0 + "," + source.x0 + ")";})
+      .on("mouseover", function (d) { nodeMouseEvent(d, "over"); })
+      .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
+      .on("click", toggleNodes);
 
-   debugger;
+    nodeEnter.append("circle")
+      .attr("r", function (d) {
+        circles[d.key] = this;
+        return d.Radius;
+      })
+      .attr("fill", function(d) { return getNodeColor(d); })
+      .style("fill-opacity", ".5")
+      .style("stroke", function(d) { return getNodeColor(d); })
+      .style("stroke-width", "1.5px");
+
+    nodeEnter.append("text")
+      .attr("text-anchor", function (d) {
+        labels[d.key] = this;
+        return "middle";
+      })
+      .attr("x", -30)
+      .attr("font-size", "14px")
+      .text(function (d) { return d.key; });
+
+    // Transition nodes to their new position.
+    var nodeUpdate = node.transition()
+        .duration(duration)
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+    // exit transition properties
+    var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+    nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+    nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+    // Update the links...
+    var link = canvas.selectAll("path.link").data(links, function (d) { return d.target.id; });
+    debugger;
     // Enter any new links at the parent's previous pos.
-    link.enter().append("path")
+    link.enter().insert("path", "g")
       .attr("class", "link")
       .attr("d", function(d) {
-        var o = {x: source.x, y: source.y};
+        debugger;
+        var o = { x: source.x0, y: source.y0 };
         return diagonal({source: o, target: o});
       })
       .attr("id", function (d) {
@@ -115,60 +166,6 @@ function main() {
         return diagonal({source: o, target: o});
       })
       .remove();
-
-    // Enter any new nodes
-    var nodeEnter = node.enter().append("g")
-      .attr("class", "node")
-      .attr("Sales", function (d) { return d.Sales; })
-      .attr("Target", function (d) { return d.Target; })
-      .attr("Percentage", function (d) { return d.Percentage; })
-      .attr("transform", function (d) { return "translate(" + source.y + "," + source.x + ")";})
-      .on("mouseover", function (d) { nodeMouseEvent(d, "over"); })
-      .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
-      .on("click", function (d) { toggleNodes(d); });
-
-    nodeEnter.append("circle")
-      .attr("r", function (d) {
-        circles[d.key] = this;
-        return d.Radius;
-      })
-      .attr("fill", function(d) { return getNodeColor(d); })
-      .style("fill-opacity", ".5")
-      .style("stroke", function(d) { return getNodeColor(d); })
-      .style("stroke-width", "1.5px");
-
-    nodeEnter.append("text")
-      .attr("text-anchor", function (d) {
-        labels[d.key] = this;
-        return "middle";
-      })
-      .attr("x", -30)
-      .attr("font-size", "14px")
-      .text(function (d) { return d.key; });
-
-    // Transition nodes to their new position.
-    var nodeUpdate = node.transition()
-        .duration(duration)
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
-    //
-    // nodeUpdate.select("circle")
-    //     .attr("r", 4.5)
-    //     .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
-    //
-    // nodeUpdate.select("text")
-    //     .style("fill-opacity", 1);
-
-    // exit transition properties
-    var nodeExit = node.exit().transition()
-      .duration(duration)
-      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
-      .remove();
-
-    nodeExit.select("circle")
-      .attr("r", 1e-6);
-
-    nodeExit.select("text")
-      .style("fill-opacity", 1e-6);
 
     // Stash the old positions for transition.
     nodes.forEach(function(d) {
@@ -222,25 +219,20 @@ function main() {
       node.Target = levelObj.Target;
       node.Percentage = levelObj.Percentage;
       node.Radius = nodeRadius(levelObj.Sales);
-      node.hidden = false;
     });
   };
 
   var toggleNodes = function (d) {
-    if (d.children) {
+    if (d.values) {
       d._children = d.children;
-      d._children.forEach(function (d) {
-        d.hidden = false;
-        toggleNodes(d);
-      });
+      d._values = d.values;
+      d.values = null;
       d.children = null;
-    } else if (d._children) {
+    } else if (d._values) {
       d.children = d._children;
-      d.children.forEach(function (d) {
-        d.hidden = true;
-        toggleNodes(d);
-      });
+      d.values = d._values;
       d._children = null;
+      d._values = null;
     }
     update(d);
   };
@@ -269,6 +261,17 @@ function main() {
     xOffset = w * 0.1,
     yOffset = h * 0.2;
 
+  var i = 0,
+    duration = 500,
+    root;
+
+  var tree = d3.layout.tree()
+    .children(function (d) { return d.values; })
+    .size([h - (xOffset * 2), w - (yOffset * 2)]);
+
+  var diagonal = d3.svg.diagonal()
+       .projection(function (d) { return [d.y, d.x]; });
+
   var canvas = d3.select(".main-graph").append("svg")
     .attr("width", w)
     .attr("height", h)
@@ -276,15 +279,6 @@ function main() {
       .attr("transform", "translate(" + yOffset + "," + xOffset + ")");
 
   canvas.call(tip);
-
-  var diagonal = d3.svg.diagonal()
-       .projection(function (d) {
-           return [d.y, d.x];
-       });
-
-  var tree = d3.layout.tree()
-    .children(function (d) { return d.values; })
-    .size([h - (xOffset * 2), w - (yOffset * 2)]);
 
   var colors = ["#bd0026", "#fecc5c", "#fd8d3c", "#f03b20", "#B02D5D",
         "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
@@ -305,15 +299,6 @@ function main() {
     });
 
     var rawData = DataStore.getRawData();
-
-    // populate filtered data in DataStore
-    DataStore.filterData();
-
-    // set colors for each level
-    setNodeColors();
-
-    // draw nodes on canvas
-    refreshCanvas();
 
     // populate territory drop down list
     var territories = d3.nest()
@@ -349,13 +334,24 @@ function main() {
         .text(function (d) { return d.key; })
         .attr("value", function(d) { return d.key; });
 
+
+    // populate filtered data in DataStore
+    DataStore.filterData();
+
+    // set colors for each level
+    setNodeColors();
+
+    // draw nodes on canvas
+    createObjectTrackers();
+    createRoot();
+
     // add event listeners for filters
     $(".sales-territory").on("change", function(event) {
       var territoryFilter = event.currentTarget.value;
 
       DataStore.setTerritoryFilter(territoryFilter);
 
-      refreshCanvas();
+      createRoot();
     });
 
     $(".sales-state").on("change", function(event) {
@@ -363,7 +359,7 @@ function main() {
 
       DataStore.setStateFilter(stateFilter);
 
-      refreshCanvas();
+      createRoot();
     });
   });
 }
