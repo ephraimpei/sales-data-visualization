@@ -35,7 +35,7 @@ function main() {
     return source.depth === 0 ? nodeColors[source.depth]["All"] : nodeColors[source.depth][source.key];
   };
 
-  var drawNodes = function () {
+  var refreshCanvas = function () {
     d3.select("g").selectAll("*").remove();
 
     var salesData = DataStore.getFilteredData();
@@ -54,6 +54,11 @@ function main() {
     root.values = nestedData;
 
     var nodes = tree.nodes(root);
+
+    drawNodes(nodes);
+  };
+
+  var drawNodes = function (nodes) {
     var links = tree.links(nodes);
 
     // set key for global node;
@@ -92,6 +97,7 @@ function main() {
       .enter()
       .append("g")
         .attr("class", "node")
+        .attr("hideChildren", false)
         .attr("Sales", function (d) { return d.Sales; })
         .attr("Target", function (d) { return d.Target; })
         .attr("Percentage", function (d) { return d.Percentage; })
@@ -102,7 +108,7 @@ function main() {
         .on("mouseout", function (d) { nodeMouseEvent(d, "out"); })
         .on("click", function(d) {
           toggleNodes(d);
-          updateCanvas(d);
+          update(d);
         });
 
     node.append("circle")
@@ -167,15 +173,48 @@ function main() {
     });
   };
 
-  function toggleNodes(d) {
-    if (d.children) {
-        d._children = d.children;
-        d.children = null;
-    } else {
+  var toggleNodes = function (d) {
+    if (d.hideChildren) {
+      if (d.children) {
         d.children = d._children;
+        d.children.forEach(toggleNodes);
         d._children = null;
+      }
+
+      d.hideChildren = false;
+    } else {
+      if (d.children) {
+        d._children = d.children;
+        d._children.forEach(toggleNodes);
+        d.children = null;
+      }
+
+      d.hideChildren = true;
     }
-  }
+  };
+
+  var update = function (source) {
+    if (source.hideChildren) {
+      nodes = tree.nodes(root).filter( function (d) { return d.hideChildren; });
+      removeNodes(source, nodes);
+    } else {
+      nodes = tree.nodes(root).filter( function (d) { return !d.hideChildren; });
+      drawNodes(nodes);
+    }
+  };
+
+  var removeNodes = function (source, nodes) {
+    var nodeExit = canvas.selectAll(".node").data(nodes).exit().transition()
+      .duration(500)
+      .attr("transform", function (d) {
+        return "translate(" + source.y + "," + source.x + ")";
+      })
+      .remove();
+
+    nodeExit.select("circle").attr("r", 1e-6);
+
+    nodeExit.select("text").style("fill-opacity", 1e-6);
+  };
 
   // set attributes for tooltip
   var tip = d3tip(d3)()
@@ -225,6 +264,10 @@ function main() {
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
     csv.forEach(function (d) {
+      // skip if a key attribute is missing from the record
+      if (!d.Product || !d.Brand || !d.Family || !d.Territory || !d.State) { return; }
+
+      // parse and coerce data fields
       d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
       d.Target = Number(d.Target.replace(/[^0-9\.]+/g,""));
       d.Percentage = Number(d.Percentage.replace("%",""));
@@ -242,7 +285,7 @@ function main() {
     setNodeColors();
 
     // draw nodes on canvas
-    drawNodes();
+    refreshCanvas();
 
     // populate territory drop down list
     var territories = d3.nest()
@@ -284,7 +327,7 @@ function main() {
 
       DataStore.setTerritoryFilter(territoryFilter);
 
-      drawNodes();
+      refreshCanvas();
     });
 
     $(".sales-state").on("change", function(event) {
@@ -292,7 +335,7 @@ function main() {
 
       DataStore.setStateFilter(stateFilter);
 
-      drawNodes();
+      refreshCanvas();
     });
   });
 }

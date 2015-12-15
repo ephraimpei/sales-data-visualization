@@ -2,9 +2,7 @@
 
 ## Summary
 
-This app visualizes mocked up sales data loaded from a CSV file. The data is captured in a hierarchical fashion where the product is is represented in three levels (product, brand, family) and the point of sale location is represented in two levels (territory and state). The app can easily be expanded to support additional levels due to the compartmentalization of the app.
-
-This app provides the user with an interactive tree map that gets loaded according the data captured in the CSV file.  The initial load is from a mocked up CSV file on the server, but the user will be able to upload his/her own CSV file with a template to refresh the tree map with their own data.
+This app loads up a beautiful and interactive tree layout for viewing basic sales data.  The initial data load is from a mocked up CSV file on the server, but the user will be able to upload his/her own CSV file using the provided template to refresh the tree map with their own data. The app can easily be expanded to support additional levels due to the DataStore script that modularizes the app thus allowing it to be easily maintained.
 
 ### Languages
 * JavaScript
@@ -22,10 +20,11 @@ This app provides the user with an interactive tree map that gets loaded accordi
 
 ### App features
 You can:
-- Represent sales data in an interactive tree map
+- Represent hierarchical sales data in an interactive tree map
 - Use the provided CSV template to upload your own data
 
 The app features:
+- Beautiful styling
 - Clickable nodes that expand to the children level
-- Territory and State filters
-- Tooltip featuring "rolled up" data quantities on mouseover events
+- Territory and State filters which dynamically update from the DataStore
+- Tooltip featuring aggregate data quantities on mouseover events
