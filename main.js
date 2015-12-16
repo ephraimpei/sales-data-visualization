@@ -5,7 +5,7 @@ function main() {
   var DataStore = module.DataStore;
 
   var addEventListeners = function () {
-    $(".sales-territory").on("change", function(event) {
+    $("#loc-level-2").on("change", function(event) {
       var territoryFilter = event.currentTarget.value;
 
       DataStore.setTerritoryFilter(territoryFilter);
@@ -13,12 +13,24 @@ function main() {
       createRoot();
     });
 
-    $(".sales-state").on("change", function(event) {
+    $("#loc-level-1").on("change", function(event) {
       var stateFilter = event.currentTarget.value;
 
       DataStore.setStateFilter(stateFilter);
 
       createRoot();
+    });
+
+    $(".upload-template").on("click", function(event) {
+      $('input[type="file"]').click();
+    });
+
+    $(".template1").on("click", function (event) {
+      readCSVData("data/sales_data.csv");
+    });
+
+    $(".template2").on("click", function (event) {
+
     });
   };
 
@@ -31,16 +43,13 @@ function main() {
   var setNodeColors = function () {
     nodeColors = {};
 
-    var levels = DataStore.getLevels().reverse();
-
     // set color for global Object
     nodeColors[0] = { "All": "steelblue"};
 
-    levels.forEach(function (level, depth) {
+    prodLevels.reverse().forEach(function (level, depth) {
       depth++;
 
       var levelDataArr = DataStore.getRolledUpData(level);
-
       nodeColors[depth] = {};
 
       levelDataArr.forEach(function (levelDataObj, i) {
@@ -61,9 +70,9 @@ function main() {
 
   var createRoot = function () {
     var nestedData = d3.nest()
-      .key(function (d) { return d.Family; })
-      .key(function (d) { return d.Brand; })
-      .key(function (d) { return d.Product; })
+      .key(function (d) { return d[prodLevel1]; })
+      .key(function (d) { return d[prodLevel2]; })
+      .key(function (d) { return d[prodLevel3]; })
       .rollup(function(leaves) {})
       .entries(DataStore.getFilteredData());
 
@@ -260,6 +269,115 @@ function main() {
     }
   };
 
+  var readCSVData = function (path) {
+    d3.csv(path, function (csv) {
+      // App default config supports 3 product levels and 2 loc levels.
+      var numProdLevels = 3;
+      var numLocLevels = 2;
+
+      // Key Attr Idx locates columns needed to enable hierarchical data
+      var keyAttrIdx1 = 0;
+      var keyAttrIdx2 = numProdLevels;
+      var keyAttrIdx3 = numProdLevels + numLocLevels;
+
+      var prodLevelValues = d3.keys(csv[0]).slice(keyAttrIdx1, keyAttrIdx2);
+      var locLevelValues = d3.keys(csv[0]).slice(keyAttrIdx2, keyAttrIdx3);
+
+      DataStore.fillProdAndLocLevels(prodLevelValues, locLevelValues);
+
+      csv.forEach(function (d) {
+        // Skip if a key attribute is missing from the record
+        for (var i = 0; i < numProdLevels + numLocLevels; i++) {
+          if (i < 3) { if (!d[prodLevelValues[i]]) { return; } }
+          else { if (!d[locLevelValues[i - numProdLevels]]) {return;} }
+        }
+
+        // Parse and coerce data fields
+        d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
+        d.Target = Number(d.Target.replace(/[^0-9\.]+/g,""));
+        d.Percentage = Number(d.Percentage.replace("%",""));
+
+        DataStore.fillRawData(d);
+      });
+
+      // Set global attributes. Level 3 means higher than Level 2 (Family > Brand)
+      prodLevels = DataStore.getLevels("Product");
+      prodLevel3 = prodLevels[0];
+      prodLevel2 = prodLevels[1];
+      prodLevel1 = prodLevels[2];
+
+      locLevels = DataStore.getLevels("Location");
+      locLevel2 = locLevels[0];
+      locLevel1 = locLevels[1];
+
+      var rawData = DataStore.getRawData();
+
+      // Add label to Location Level 2 drop down list
+      $(".loc-level-2-label").text(locLevel2);
+
+      // Populate Location Level 2 drop down list
+      var level2Locations = d3.nest()
+        .key(function (d) { return d[locLevel2]; })
+        .entries(rawData)
+        .sort(function(a, b) {
+          var charCodeValueA = 0;
+          var charCodeValueB = 0;
+
+          a.key.split("").forEach(function (el) { charCodeValueA += el.charCodeAt(); });
+          b.key.split("").forEach(function (el) { charCodeValueB += el.charCodeAt(); });
+
+          return charCodeValueA - charCodeValueB;
+        });
+
+      level2Locations = [{key:"All"}].concat(level2Locations);
+
+      d3.select("#loc-level-2").selectAll("option")
+        .data(level2Locations)
+        .enter()
+          .append("option")
+          .text(function (d) { return d.key; })
+          .attr("value", function(d) { return d.key; });
+
+      // Add label to Location Level 1 drop down list
+      $(".loc-level-1-label").text(locLevel1);
+
+      // Populate Location Level 1 drop down list
+      var level1Locations = d3.nest()
+        .key(function (d) { return d[locLevel1]; })
+        .entries(rawData)
+        .sort(function(a, b) {
+          var charCodeValueA = 0;
+          var charCodeValueB = 0;
+
+          a.key.split("").forEach(function (el) { charCodeValueA += el.charCodeAt(); });
+          b.key.split("").forEach(function (el) { charCodeValueB += el.charCodeAt(); });
+
+          return charCodeValueA - charCodeValueB;
+        });
+
+      level1Locations = [{key:"All"}].concat(level1Locations);
+
+      d3.select("#loc-level-1").selectAll("option")
+        .data(level1Locations)
+        .enter()
+          .append("option")
+          .text(function (d) { return d.key; })
+          .attr("value", function(d) { return d.key; });
+
+      // Populate filtered data in DataStore
+      DataStore.filterData();
+
+      // Set colors for each level
+      setNodeColors();
+
+      // Create object trackers (will be used for selecting objects to animate)
+      createObjectTrackers();
+
+      // Create root and canvas
+      createRoot();
+    });
+  };
+
   // set attributes for tooltip
   var tip = d3tip(d3)()
     .attr('class', 'd3-tip')
@@ -307,85 +425,7 @@ function main() {
         "#9B2C67", "#982B9A", "#692DA7", "#5725AA", "#4823AF",
         "#d7b5d8", "#dd1c77", "#5A0C7A", "#5A0C7A"];
 
-  //read test data
-  d3.csv("data/sales_data.csv", function (csv) {
-    // App default config supports 3 product levels and 2 loc levels. Can change these here.
-    var numProdLevels = 3;
-    var numLocLevels = 2;
+  readCSVData("data/sales_data.csv");
 
-    // Key Attr Idx locates columns needed to enable hierarchical data
-    var keyAttrIdx1 = 0;
-    var keyAttrIdx2 = numProdLevels;
-    var keyAttrIdx3 = numProdLevels + numLocLevels;
-
-    var prodLevelValues = d3.keys(csv[0]).slice(keyAttrIdx1, keyAttrIdx2);
-    var locLevelValues = d3.keys(csv[0]).slice(keyAttrIdx2, keyAttrIdx3);
-
-    DataStore.fillProdAndLocLevels(prodLevelValues, locLevelValues);
-
-    csv.forEach(function (d) {
-      // skip if a key attribute is missing from the record
-      for (var i = 0; i < numProdLevels + numLocLevels; i++) {
-        if (i < 3) { if (!d[prodLevelValues[i]]) { return; } }
-        else { if (!d[locLevelValues[i - numProdLevels]]) {return;} }
-      }
-
-      // parse and coerce data fields
-      d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
-      d.Target = Number(d.Target.replace(/[^0-9\.]+/g,""));
-      d.Percentage = Number(d.Percentage.replace("%",""));
-
-      DataStore.fillRawData(d);
-    });
-
-    var rawData = DataStore.getRawData();
-
-    // populate territory drop down list
-    var territories = d3.nest()
-      .key(function (d) { return d.Territory; })
-      .entries(rawData)
-      .sort(function(a, b) {
-        var territoryA = parseInt(a.key.replace("Territory ", ""));
-        var territoryB = parseInt(b.key.replace("Territory ", ""));
-        return territoryA - territoryB;
-      });
-
-    territories = [{key:"All"}].concat(territories);
-
-    d3.select(".sales-territory").selectAll("option")
-      .data(territories)
-      .enter()
-        .append("option")
-        .text(function (d) { return d.key; })
-        .attr("value", function(d) { return d.key; });
-
-    // populate state drop down list
-    var states = d3.nest()
-      .key(function (d) { return d.State; })
-      .sortKeys(d3.ascending)
-      .entries(rawData);
-
-    states = [{key:"All"}].concat(states);
-
-    d3.select(".sales-state").selectAll("option")
-      .data(states)
-      .enter()
-        .append("option")
-        .text(function (d) { return d.key; })
-        .attr("value", function(d) { return d.key; });
-
-
-    // populate filtered data in DataStore
-    DataStore.filterData();
-
-    // set colors for each level
-    setNodeColors();
-
-    // draw nodes on canvas
-    createObjectTrackers();
-    createRoot();
-
-    // add event listeners for filters
-    addEventListeners();
-  });
+  addEventListeners();
 }

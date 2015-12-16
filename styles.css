@@ -9,6 +9,10 @@ html, body, h1, h2, h3, div, ul, li, a, figure, button, textarea, form, label {
   background: transparent;
 }
 
+input:focus, button:active, button:focus, select:focus {
+  outline: 0;
+}
+
 body {
   font-family: sans-serif;
   background: #eee;
@@ -37,7 +41,7 @@ body {
   border-right: 0;
 }
 
-.node:hover {
+.node:hover, button:hover, a:hover {
   cursor: pointer;
 }
 
@@ -51,6 +55,10 @@ body {
   margin: 0 10px;
 }
 
-.download-template {
+button {
   background: white;
+}
+
+input[type="file"] {
+  display: none;
 }

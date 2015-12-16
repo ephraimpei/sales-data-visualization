@@ -7,17 +7,20 @@ var _territoryFilter = "All";
 var _stateFilter = "All";
 var _filteredData = [];
 
-var _productLevels = ["Product", "Brand", "Family"];
+var _productLevels = [];
 var _locationLevels = [];
 
 var DataStore = {
+  getLevels: function (level) {
+    switch (level) {
+      case "Product": return _productLevels.slice();
+      case "Location": return _locationLevels.slice();
+    }
+  },
+
   fillProdAndLocLevels: function (prodLevels, locLevels) {
     _productLevels = prodLevels;
     _locationLevels = locLevels;
-  },
-
-  getLevels: function () {
-    return _productLevels.slice();
   },
 
   findObj: function (arr, level, target) {
