@@ -7,11 +7,17 @@ var _territoryFilter = "All";
 var _stateFilter = "All";
 var _filteredData = [];
 
-var _levels = ["Product", "Brand", "Family"];
+var _productLevels = ["Product", "Brand", "Family"];
+var _locationLevels = [];
 
 var DataStore = {
+  fillProdAndLocLevels: function (prodLevels, locLevels) {
+    _productLevels = prodLevels;
+    _locationLevels = locLevels;
+  },
+
   getLevels: function () {
-    return _levels.slice();
+    return _productLevels.slice();
   },
 
   findObj: function (arr, level, target) {
@@ -163,7 +169,7 @@ var DataStore = {
   calculateRolledUpData: function () {
     this.resetData();
 
-    _levels.forEach(function (level) {
+    _productLevels.forEach(function (level) {
       DataStore.setRolledUpData(level);
     });
   },

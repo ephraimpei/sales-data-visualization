@@ -1,8 +1,12 @@
 /* reset */
-html, body, div, label {
+html, body, h1, h2, h3, div, ul, li, a, figure, button, textarea, form, label {
   font: inherit;
+  vertical-align: inherit;
+  text-align: inherit;
+  text-decoration: inherit;
   color: inherit;
-  background: inherit;
+
+  background: transparent;
 }
 
 body {
@@ -41,4 +45,12 @@ body {
   position: absolute;
   left: calc((100% * .1) - 40px);
   top: 20px;
+}
+
+.nav-bar > * {
+  margin: 0 10px;
+}
+
+.download-template {
+  background: white;
 }

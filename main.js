@@ -4,6 +4,24 @@ function main() {
   var d3tip = module.d3tip;
   var DataStore = module.DataStore;
 
+  var addEventListeners = function () {
+    $(".sales-territory").on("change", function(event) {
+      var territoryFilter = event.currentTarget.value;
+
+      DataStore.setTerritoryFilter(territoryFilter);
+
+      createRoot();
+    });
+
+    $(".sales-state").on("change", function(event) {
+      var stateFilter = event.currentTarget.value;
+
+      DataStore.setStateFilter(stateFilter);
+
+      createRoot();
+    });
+  };
+
   var createObjectTrackers = function () {
     labels = {};
     paths = {};
@@ -291,9 +309,26 @@ function main() {
 
   //read test data
   d3.csv("data/sales_data.csv", function (csv) {
+    // App default config supports 3 product levels and 2 loc levels. Can change these here.
+    var numProdLevels = 3;
+    var numLocLevels = 2;
+
+    // Key Attr Idx locates columns needed to enable hierarchical data
+    var keyAttrIdx1 = 0;
+    var keyAttrIdx2 = numProdLevels;
+    var keyAttrIdx3 = numProdLevels + numLocLevels;
+
+    var prodLevelValues = d3.keys(csv[0]).slice(keyAttrIdx1, keyAttrIdx2);
+    var locLevelValues = d3.keys(csv[0]).slice(keyAttrIdx2, keyAttrIdx3);
+
+    DataStore.fillProdAndLocLevels(prodLevelValues, locLevelValues);
+
     csv.forEach(function (d) {
       // skip if a key attribute is missing from the record
-      if (!d.Product || !d.Brand || !d.Family || !d.Territory || !d.State) { return; }
+      for (var i = 0; i < numProdLevels + numLocLevels; i++) {
+        if (i < 3) { if (!d[prodLevelValues[i]]) { return; } }
+        else { if (!d[locLevelValues[i - numProdLevels]]) {return;} }
+      }
 
       // parse and coerce data fields
       d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
@@ -351,20 +386,6 @@ function main() {
     createRoot();
 
     // add event listeners for filters
-    $(".sales-territory").on("change", function(event) {
-      var territoryFilter = event.currentTarget.value;
-
-      DataStore.setTerritoryFilter(territoryFilter);
-
-      createRoot();
-    });
-
-    $(".sales-state").on("change", function(event) {
-      var stateFilter = event.currentTarget.value;
-
-      DataStore.setStateFilter(stateFilter);
-
-      createRoot();
-    });
+    addEventListeners();
   });
 }
