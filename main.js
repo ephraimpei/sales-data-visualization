@@ -56,6 +56,8 @@ function main() {
     root.y0 = 0;
     root.values = nestedData;
 
+    canvas.selectAll("*").remove();
+
     update(root);
   };
 
@@ -64,8 +66,6 @@ function main() {
     var links = tree.links(nodes);
     var duration = 500;
 
-    createObjectTrackers();
-
     // Set node attributes
     resetNodeAttr(nodes);
 
@@ -73,9 +73,7 @@ function main() {
     nodes[0].key = "All";
 
     // Update the nodes…
-    var node = canvas.selectAll("g.node").data(nodes, function (d, i) {
-      return d.id || (d.id = ++i);
-    });
+    var node = canvas.selectAll("g.node").data(nodes, function (d, i) { return d.id || (d.id = ++i); });
 
     // Enter any new nodes
     var nodeEnter = node.enter().append("g")
@@ -126,17 +124,21 @@ function main() {
       .style("fill-opacity", 1e-6);
 
     // Update the links...
-    var link = canvas.selectAll("path.link").data(links, function (d) { return d.target.id; });
+    var link = canvas.selectAll("path.link").data(links, function (d) {
+      var sourceKey = d.source.key;
+      var targetKey = d.target.key;
+      var pathId = sourceKey + "-to-" + targetKey;
+
+      return pathId;
+    });
 
     // Enter any new links at the parent's previous pos.
     link.enter().insert("path", "g")
       .attr("class", "link")
       .attr("d", function(d) {
-        debugger;
         var o = { x: source.x0, y: source.y0 };
         return diagonal({source: o, target: o});
       })
-      .attr("d", diagonal)
       .attr("id", function (d) {
         var sourceKey = d.source.key;
         var targetKey = d.target.key;
@@ -157,9 +159,7 @@ function main() {
       .style("stroke-width", function (d) { return d.target.Radius; });
 
     // Transition links to their new position.
-    link.transition()
-      .duration(duration)
-      .attr("d", diagonal);
+    link.attr("d", diagonal);
 
     // Transition exiting nodes to the parent's new position.
     link.exit().transition()
@@ -188,6 +188,7 @@ function main() {
       fontSize = "14px", fontWeight = "normal", circleOpacity = "0.5", pathOpacity = "0.3";
     }
 
+    // Highlight entire path and source nodes
     function highlightPathAndNodes(d) {
       var targetKey = d.key;
 
