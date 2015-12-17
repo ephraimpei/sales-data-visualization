@@ -6,17 +6,17 @@ function main() {
 
   var addEventListeners = function () {
     $("#loc-level-2").on("change", function(event) {
-      var territoryFilter = event.currentTarget.value;
+      var locLevel2Filter = event.currentTarget.value;
 
-      DataStore.setTerritoryFilter(territoryFilter);
+      DataStore.setLocLevel2Filter(locLevel2Filter);
 
       createRoot();
     });
 
     $("#loc-level-1").on("change", function(event) {
-      var stateFilter = event.currentTarget.value;
+      var locLevel1Filter = event.currentTarget.value;
 
-      DataStore.setStateFilter(stateFilter);
+      DataStore.setLocLevel1Filter(locLevel1Filter);
 
       createRoot();
     });
@@ -25,7 +25,28 @@ function main() {
       $('input[type="file"]').click();
     });
 
+    $('input[type="file"]').on("change", function(event) {
+      debugger;
+      var reader = new FileReader();
+      var file = event.currentTarget.files[0];
+
+      reader.onloadend = function(event) {
+        DataStore.resetDataStore();
+
+        var result = event.currentTarget.result;
+
+        readCSVData(result);
+      };
+
+      if (file) {
+        if (file.type !== "text/csv") { alert("CSV file must be selected!"); return; }
+        else { reader.readAsDataURL(file); }
+      }
+    });
+
     $(".template1").on("click", function (event) {
+      DataStore.resetDataStore();
+
       readCSVData("data/sales_data.csv");
     });
 
@@ -51,7 +72,7 @@ function main() {
 
       var levelDataArr = DataStore.getRolledUpData(level);
       nodeColors[depth] = {};
-
+      debugger;
       levelDataArr.forEach(function (levelDataObj, i) {
         nodeColors[depth][levelDataObj.key] = colors[(i + 1) % colors.length];
       });
@@ -296,7 +317,6 @@ function main() {
         d.Sales = Number(d.Sales.replace(/[^0-9\.]+/g,""));
         d.Target = Number(d.Target.replace(/[^0-9\.]+/g,""));
         d.Percentage = Number(d.Percentage.replace("%",""));
-
         DataStore.fillRawData(d);
       });
 

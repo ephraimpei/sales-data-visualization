@@ -1,15 +1,28 @@
 var _rawData = [];
-var _rolledUpProdData = [];
-var _rolledUpBrandData = [];
-var _rolledUpFamilyData = [];
-var _territoryFilter = "All";
-var _stateFilter = "All";
+var _rolledUpProdLvl3Data = [];
+var _rolledUpProdLvl2Data = [];
+var _rolledUpProdLvl1Data = [];
+var _locLevel2Filter = "All";
+var _locLevel1Filter = "All";
 var _filteredData = [];
 
 var _productLevels = [];
 var _locationLevels = [];
 
 var DataStore = {
+  resetDataStore: function () {
+    _rawData = [];
+    _rolledUpProdLvl3Data = [];
+    _rolledUpProdLvl2Data = [];
+    _rolledUpProdLvl1Data = [];
+    _locLevel2Filter = "All";
+    _locLevel1Filter = "All";
+    _filteredData = [];
+
+    _productLevels = [];
+    _locationLevels = [];
+  },
+
   getLevels: function (level) {
     switch (level) {
       case "Product": return _productLevels.slice();
@@ -55,7 +68,7 @@ var DataStore = {
     var Sales = 0;
     var Target = 0;
 
-    _rolledUpFamilyData.forEach(function (family) {
+    _rolledUpProdLvl1Data.forEach(function (family) {
       Sales += family.Sales;
       Target += family.Target;
     });
@@ -76,9 +89,9 @@ var DataStore = {
     var arr, level;
 
     switch (depth) {
-      case 1: arr = _rolledUpFamilyData; break;
-      case 2: arr = _rolledUpBrandData; break;
-      case 3: arr = _rolledUpProdData; break;
+      case 1: arr = _rolledUpProdLvl1Data; break;
+      case 2: arr = _rolledUpProdLvl2Data; break;
+      case 3: arr = _rolledUpProdLvl3Data; break;
       default: return {};
     }
 
@@ -89,9 +102,9 @@ var DataStore = {
     var levelArr, baseArr;
 
     switch (level) {
-      case "Product": levelArr = _rolledUpProdData; baseArr = _filteredData; break;
-      case "Brand": levelArr = _rolledUpBrandData; baseArr = _rolledUpProdData; break;
-      case "Family": levelArr = _rolledUpFamilyData; baseArr = _rolledUpBrandData; break;
+      case prodLevel3: levelArr = _rolledUpProdLvl3Data; baseArr = _filteredData; break;
+      case prodLevel2: levelArr = _rolledUpProdLvl2Data; baseArr = _rolledUpProdLvl3Data; break;
+      case prodLevel1: levelArr = _rolledUpProdLvl1Data; baseArr = _rolledUpProdLvl2Data; break;
     }
 
     baseArr.forEach(function (data) {
@@ -114,27 +127,27 @@ var DataStore = {
 
   getRolledUpData: function (level) {
     switch (level) {
-      case "Product": return _rolledUpProdData.slice();
-      case "Brand": return _rolledUpBrandData.slice();
-      case "Family": return _rolledUpFamilyData.slice();
+      case prodLevel3: return _rolledUpProdLvl3Data.slice();
+      case prodLevel2: return _rolledUpProdLvl2Data.slice();
+      case prodLevel1: return _rolledUpProdLvl1Data.slice();
     }
   },
 
   getFilters: function () {
     return {
-      territory: _territoryFilter,
-      state: _stateFilter
+      locLevel1: _locLevel2Filter,
+      locLevel2: _locLevel1Filter
     };
   },
 
-  setTerritoryFilter: function(newFilter) {
-    _territoryFilter = newFilter;
+  setLocLevel2Filter: function(newFilter) {
+    _locLevel2Filter = newFilter;
 
     this.filterData();
   },
 
-  setStateFilter: function(newFilter) {
-    _stateFilter = newFilter;
+  setLocLevel1Filter: function(newFilter) {
+    _locLevel1Filter = newFilter;
 
     this.filterData();
   },
@@ -142,24 +155,24 @@ var DataStore = {
   filterData: function () {
     _filteredData = [];
 
-    if (_territoryFilter === "All" && _stateFilter === "All") {
+    if (_locLevel2Filter === "All" && _locLevel1Filter === "All") {
       _filteredData = _rawData;
-    } else if (_territoryFilter === "All") {
+    } else if (_locLevel2Filter === "All") {
       _rawData.forEach(function (data) {
-        if (data.State === _stateFilter) {
+        if (data[locLevel1] === _locLevel1Filter) {
           _filteredData.push(data);
         }
       });
-    } else if (_stateFilter === "All") {
+    } else if (_locLevel1Filter === "All") {
       _rawData.forEach(function (data) {
-        if (data.Territory === _territoryFilter) {
+        if (data[locLevel2] === _locLevel2Filter) {
           _filteredData.push(data);
         }
       });
     } else {
       _rawData.forEach(function (data) {
-        if (data.Territory === _territoryFilter &&
-            data.State === _stateFilter) {
+        if (data[locLevel2] === _locLevel2Filter &&
+            data[locLevel1] === _locLevel1Filter) {
           _filteredData.push(data);
         }
       });
@@ -181,9 +194,9 @@ var DataStore = {
   },
 
   resetData: function () {
-    _rolledUpProdData = [];
-    _rolledUpBrandData = [];
-    _rolledUpFamilyData = [];
+    _rolledUpProdLvl3Data = [];
+    _rolledUpProdLvl2Data = [];
+    _rolledUpProdLvl1Data = [];
   }
 };
 
