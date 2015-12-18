@@ -7,6 +7,8 @@ function main() {
   var addEventListeners = function () {
     $("#loc-level-2").on("change", function(event) {
       var locLevel2Filter = event.currentTarget.value;
+      var locLevel1Filter = DataStore.getLocMappingObj()[locLevel2Filter];
+      $("#loc-level-1").val(locLevel1Filter);
 
       DataStore.setLocLevel2Filter(locLevel2Filter);
 
@@ -26,7 +28,6 @@ function main() {
     });
 
     $('input[type="file"]').on("change", function(event) {
-      debugger;
       var reader = new FileReader();
       var file = event.currentTarget.files[0];
 
@@ -51,7 +52,9 @@ function main() {
     });
 
     $(".template2").on("click", function (event) {
+      DataStore.resetDataStore();
 
+      readCSVData("data/sales_data2.csv");
     });
   };
 
@@ -67,12 +70,12 @@ function main() {
     // set color for global Object
     nodeColors[0] = { "All": "steelblue"};
 
-    prodLevels.reverse().forEach(function (level, depth) {
+    prodLevels.forEach(function (level, depth) {
       depth++;
 
       var levelDataArr = DataStore.getRolledUpData(level);
       nodeColors[depth] = {};
-      debugger;
+
       levelDataArr.forEach(function (levelDataObj, i) {
         nodeColors[depth][levelDataObj.key] = colors[(i + 1) % colors.length];
       });
@@ -90,6 +93,8 @@ function main() {
   };
 
   var createRoot = function () {
+    canvas.selectAll("*").remove();
+
     var nestedData = d3.nest()
       .key(function (d) { return d[prodLevel1]; })
       .key(function (d) { return d[prodLevel2]; })
@@ -103,8 +108,6 @@ function main() {
     root.x0 = (h - (xOffset * 2)) / 2;
     root.y0 = 0;
     root.values = nestedData;
-
-    canvas.selectAll("*").remove();
 
     update(root);
   };
@@ -292,19 +295,38 @@ function main() {
 
   var readCSVData = function (path) {
     d3.csv(path, function (csv) {
-      // App default config supports 3 product levels and 2 loc levels.
+      // App default config supports 3 product levels and 2 loc levels and 3 data fields.
+      // Data fields supported: first two are scalar quantities and third is a percentage
       var numProdLevels = 3;
       var numLocLevels = 2;
+      var numDataFields = 3;
 
       // Key Attr Idx locates columns needed to enable hierarchical data
       var keyAttrIdx1 = 0;
       var keyAttrIdx2 = numProdLevels;
       var keyAttrIdx3 = numProdLevels + numLocLevels;
+      var keyAttrIdx4 = numLocLevels + numDataFields;
 
       var prodLevelValues = d3.keys(csv[0]).slice(keyAttrIdx1, keyAttrIdx2);
       var locLevelValues = d3.keys(csv[0]).slice(keyAttrIdx2, keyAttrIdx3);
+      var dataFields = d3.keys(csv[0]).slice(keyAttrIdx3, keyAttrIdx4);
 
-      DataStore.fillProdAndLocLevels(prodLevelValues, locLevelValues);
+      DataStore.populateDataAttr(prodLevelValues, locLevelValues, dataFields);
+
+      // Set global attributes. Level 3 means higher than Level 2 (Family > Brand)
+      prodLevels = DataStore.getDataAttr("Product");
+      prodLevel1 = prodLevels[0];
+      prodLevel2 = prodLevels[1];
+      prodLevel3 = prodLevels[2];
+
+      locLevels = DataStore.getDataAttr("Location");
+      locLevel1 = locLevels[0];
+      locLevel2 = locLevels[1];
+
+      dataFields = DataStore.getDataAttr("Data");
+      dataField1 = dataFields[0];
+      dataField2 = dataFields[1];
+      dataField3 = dataFields[2];
 
       csv.forEach(function (d) {
         // Skip if a key attribute is missing from the record
@@ -319,16 +341,6 @@ function main() {
         d.Percentage = Number(d.Percentage.replace("%",""));
         DataStore.fillRawData(d);
       });
-
-      // Set global attributes. Level 3 means higher than Level 2 (Family > Brand)
-      prodLevels = DataStore.getLevels("Product");
-      prodLevel3 = prodLevels[0];
-      prodLevel2 = prodLevels[1];
-      prodLevel1 = prodLevels[2];
-
-      locLevels = DataStore.getLevels("Location");
-      locLevel2 = locLevels[0];
-      locLevel1 = locLevels[1];
 
       var rawData = DataStore.getRawData();
 
@@ -351,6 +363,10 @@ function main() {
 
       level2Locations = [{key:"All"}].concat(level2Locations);
 
+      // Remove previous select options
+      d3.select("#loc-level-2").selectAll("option").remove();
+
+      // Append new select options
       d3.select("#loc-level-2").selectAll("option")
         .data(level2Locations)
         .enter()
@@ -377,12 +393,16 @@ function main() {
 
       level1Locations = [{key:"All"}].concat(level1Locations);
 
+      d3.select("#loc-level-1").selectAll("option").remove();
+
       d3.select("#loc-level-1").selectAll("option")
         .data(level1Locations)
         .enter()
           .append("option")
           .text(function (d) { return d.key; })
           .attr("value", function(d) { return d.key; });
+
+      DataStore.createLocationMappingObj();
 
       // Populate filtered data in DataStore
       DataStore.filterData();

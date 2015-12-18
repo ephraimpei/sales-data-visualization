@@ -18,6 +18,12 @@ body {
   background: #eee;
 }
 
+.group:after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
 .d3-tip {
   background: white;
   text-align: center;
@@ -61,4 +67,13 @@ button {
 
 input[type="file"] {
   display: none;
+}
+
+.filters {
+  float: left;
+  display: inline-block;
+}
+
+.buttons {
+  float: left;
 }

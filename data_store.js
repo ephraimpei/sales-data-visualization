@@ -5,11 +5,23 @@ var _rolledUpProdLvl1Data = [];
 var _locLevel2Filter = "All";
 var _locLevel1Filter = "All";
 var _filteredData = [];
+var _locMappingObj = {"All": "All"};
 
 var _productLevels = [];
 var _locationLevels = [];
+var _dataFields = [];
 
 var DataStore = {
+  createLocationMappingObj: function () {
+    _rawData.forEach(function (data) {
+      _locMappingObj[data[locLevel2]] = data[locLevel1];
+    });
+  },
+
+  getLocMappingObj: function () {
+    return _locMappingObj;
+  },
+
   resetDataStore: function () {
     _rawData = [];
     _rolledUpProdLvl3Data = [];
@@ -18,21 +30,25 @@ var DataStore = {
     _locLevel2Filter = "All";
     _locLevel1Filter = "All";
     _filteredData = [];
+    _locMappingObj = {"All": "All"};
 
     _productLevels = [];
     _locationLevels = [];
+    _dataFields = [];
   },
 
-  getLevels: function (level) {
+  getDataAttr: function (level) {
     switch (level) {
       case "Product": return _productLevels.slice();
       case "Location": return _locationLevels.slice();
+      case "Data": return _dataFields.slice();
     }
   },
 
-  fillProdAndLocLevels: function (prodLevels, locLevels) {
+  populateDataAttr: function (prodLevels, locLevels, dataFields) {
     _productLevels = prodLevels;
     _locationLevels = locLevels;
+    _dataFields = dataFields;
   },
 
   findObj: function (arr, level, target) {
@@ -68,9 +84,9 @@ var DataStore = {
     var Sales = 0;
     var Target = 0;
 
-    _rolledUpProdLvl1Data.forEach(function (family) {
-      Sales += family.Sales;
-      Target += family.Target;
+    _rolledUpProdLvl1Data.forEach(function (level1) {
+      Sales += level1.Sales;
+      Target += level1.Target;
     });
 
     var Percentage = Math.floor((Sales / Target) * 100);
@@ -184,7 +200,9 @@ var DataStore = {
   calculateRolledUpData: function () {
     this.resetData();
 
-    _productLevels.forEach(function (level) {
+    reverseProductLevels = _productLevels.slice().reverse();
+
+    reverseProductLevels.forEach(function (level) {
       DataStore.setRolledUpData(level);
     });
   },
