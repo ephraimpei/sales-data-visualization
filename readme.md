@@ -22,9 +22,14 @@ This app loads up a beautiful and interactive tree layout for viewing basic sale
 You can:
 - Represent hierarchical sales data in an interactive tree map
 - Use the provided CSV template to upload your own data
+- Load two sample data sets (all fake/mocked up data):
+  1. Product Sales Data
+  2. NBA Jersey Sales Data
 
 The app features:
 - Beautiful styling
+- Support for three levels of the product hierarchy
+- Support for two levels of the location hierarchy
 - Clickable nodes that expand to the children level
-- Territory and State filters which dynamically update from the DataStore
+- Loc Level 1 and Loc Level 2 filters which dynamically update the tree layout
 - Tooltip featuring aggregate data quantities on mouseover events
