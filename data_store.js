@@ -51,18 +51,18 @@ var DataStore = {
     _dataFields = dataFields;
   },
 
-  findObj: function (arr, level, target) {
+  findObj: function (arr, level, parentLvl, target, mode) {
     if (arr.length === 0) { return null; }
 
-    if (level !== "key") {
+    if (!mode) {
       for (var i = 0; i < arr.length; i++) {
-        if (arr[i].key === target[level]) {
+        if (arr[i].key === target[level] && (parentLvl === "All" || arr[i][parentLvl] === target[parentLvl])) {
           return arr[i];
         }
       }
     } else {
       for (var j = 0; j < arr.length; j++) {
-        if (arr[j].key === target) {
+        if (arr[j].key === target.key && (parentLvl === "All" || arr[j][parentLvl] === target.parent.key)) {
           return arr[j];
         }
       }
@@ -99,37 +99,41 @@ var DataStore = {
     };
   },
 
-  getLevelData: function (depth, key) {
-    if (depth === 0) { return this.getGlobalObj(); }
+  getLevelData: function (node) {
+    if (node.depth === 0) { return this.getGlobalObj(); }
 
-    var arr, level;
+    var arr, level, parentLvl;
 
-    switch (depth) {
-      case 1: arr = _rolledUpProdLvl1Data; break;
-      case 2: arr = _rolledUpProdLvl2Data; break;
-      case 3: arr = _rolledUpProdLvl3Data; break;
+    switch (node.depth) {
+      case 1: arr = _rolledUpProdLvl1Data; level = prodLevel1; parentLvl = "All"; break;
+      case 2: arr = _rolledUpProdLvl2Data; level = prodLevel2; parentLvl = prodLevel1; break;
+      case 3: arr = _rolledUpProdLvl3Data; level = prodLevel3; parentLvl = prodLevel2; break;
       default: return {};
     }
 
-    return this.findObj(arr, "key", key);
+    return this.findObj(arr, level, parentLvl, node, "node");
   },
 
   setRolledUpData: function (level) {
-    var levelArr, baseArr;
+    var levelArr, baseArr, parentLvl, depth;
 
     switch (level) {
-      case prodLevel3: levelArr = _rolledUpProdLvl3Data; baseArr = _filteredData; break;
-      case prodLevel2: levelArr = _rolledUpProdLvl2Data; baseArr = _rolledUpProdLvl3Data; break;
-      case prodLevel1: levelArr = _rolledUpProdLvl1Data; baseArr = _rolledUpProdLvl2Data; break;
+      case prodLevel3: depth = 3; levelArr = _rolledUpProdLvl3Data; parentLvl = prodLevel2; baseArr = _filteredData; break;
+      case prodLevel2: depth = 2; levelArr = _rolledUpProdLvl2Data; parentLvl = prodLevel1; baseArr = _rolledUpProdLvl3Data; break;
+      case prodLevel1: depth = 1; levelArr = _rolledUpProdLvl1Data; parentLvl = "All"; baseArr = _rolledUpProdLvl2Data; break;
     }
 
     baseArr.forEach(function (data) {
-      var levelData = DataStore.findObj(levelArr, level, data);
+      var levelData = DataStore.findObj(levelArr, level, parentLvl, data);
+
       if (levelData) {
         levelData.Sales += data.Sales;
         levelData.Target += data.Target;
       } else {
-        var copy = Object.assign({}, data);
+        var copy = DataStore.setProdLvlsForObj(data, depth);
+        copy.Sales = data.Sales;
+        copy.Target = data.Target;
+        copy.Percentage = data.Percentage;
         copy.key = copy[level];
         levelArr.push(copy);
       }
@@ -139,6 +143,16 @@ var DataStore = {
     levelArr.forEach(function (levelData) {
       levelData.Percentage = Math.floor((levelData.Sales / levelData.Target) * 100);
     });
+  },
+
+  setProdLvlsForObj: function (data, depth) {
+    var copy = {};
+
+    for (var i = depth - 1; i >= 0; i--) {
+      copy[_productLevels[i]] = data[_productLevels[i]];
+    }
+
+    return copy;
   },
 
   getRolledUpData: function (level) {
@@ -198,8 +212,6 @@ var DataStore = {
   },
 
   calculateRolledUpData: function () {
-    this.resetData();
-
     reverseProductLevels = _productLevels.slice().reverse();
 
     reverseProductLevels.forEach(function (level) {
@@ -209,12 +221,6 @@ var DataStore = {
 
   getFilteredData: function () {
     return _filteredData.slice();
-  },
-
-  resetData: function () {
-    _rolledUpProdLvl3Data = [];
-    _rolledUpProdLvl2Data = [];
-    _rolledUpProdLvl1Data = [];
   }
 };
 

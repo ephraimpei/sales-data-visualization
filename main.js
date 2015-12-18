@@ -268,7 +268,7 @@ function main() {
       .range([0, 50]);
 
     nodes.forEach(function (node) {
-      var levelObj = DataStore.getLevelData(node.depth, node.key);
+      var levelObj = DataStore.getLevelData(node);
 
       node.Sales = levelObj.Sales;
       node.Target = levelObj.Target;

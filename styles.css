@@ -1,5 +1,7 @@
 /* reset */
-html, body, h1, h2, h3, div, ul, li, a, figure, button, textarea, form, label {
+html, body, h1, h2, h3, div, ul, li, a, p, figure, button, textarea, form, label {
+  margin: 0;
+
   font: inherit;
   vertical-align: inherit;
   text-align: inherit;
@@ -11,6 +13,10 @@ html, body, h1, h2, h3, div, ul, li, a, figure, button, textarea, form, label {
 
 input:focus, button:active, button:focus, select:focus {
   outline: 0;
+}
+
+p {
+  text-align: center;
 }
 
 body {
