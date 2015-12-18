@@ -115,7 +115,7 @@ function main() {
   var update = function (source) {
     var nodes = tree.nodes(root);
     var links = tree.links(nodes);
-    var duration = 500;
+    var duration = 250;
 
     // Set node attributes
     resetNodeAttr(nodes);
@@ -140,7 +140,7 @@ function main() {
 
     nodeEnter.append("circle")
       .attr("r", function (d) {
-        circles[d.key] = this;
+        circles[d.id] = this;
         return d.Radius;
       })
       .attr("fill", function(d) { return getNodeColor(d); })
@@ -150,7 +150,7 @@ function main() {
 
     nodeEnter.append("text")
       .attr("text-anchor", function (d) {
-        labels[d.key] = this;
+        labels[d.id] = this;
         return "middle";
       })
       .attr("x", -30)
@@ -159,8 +159,8 @@ function main() {
 
     // Transition nodes to their new position.
     var nodeUpdate = node.transition()
-        .duration(duration)
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
     // exit transition properties
     var nodeExit = node.exit().transition()
@@ -210,7 +210,9 @@ function main() {
       .style("stroke-width", function (d) { return d.target.Radius; });
 
     // Transition links to their new position.
-    link.attr("d", diagonal);
+    link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
 
     // Transition exiting nodes to the parent's new position.
     link.exit().transition()
@@ -241,12 +243,11 @@ function main() {
 
     // Highlight entire path and source nodes
     function highlightPathAndNodes(d) {
-      var targetKey = d.key;
-
-      d3.select(circles[d.key]).transition().style("fill-opacity", circleOpacity);
-      d3.select(labels[d.key]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
+      d3.select(circles[d.id]).transition().style("fill-opacity", circleOpacity);
+      d3.select(labels[d.id]).transition().style("font-weight", fontWeight).style("font-size", fontSize);
 
       if (d.parent) {
+        var targetKey = d.key;
         var sourceKey = d.parent.key;
         var pathId = sourceKey + "-to-" + targetKey;
 
@@ -441,10 +442,6 @@ function main() {
     h = $(window).height(),
     xOffset = w * 0.1,
     yOffset = h * 0.2;
-
-  var i = 0,
-    duration = 500,
-    root;
 
   var tree = d3.layout.tree()
     .children(function (d) { return d.values; })
