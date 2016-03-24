@@ -1,5 +1,9 @@
 # Sales Data Visualization
 
+[Live Site][live]
+
+[live]: http://sales-data-visualization.herokuapp.com/
+
 ## Summary
 
 This app loads up a beautiful and interactive tree layout for viewing basic sales data.  The initial data load is from a mocked up CSV file on the server, but the user will be able to upload his/her own CSV file using the provided template to refresh the tree map with their own data. The app can easily be expanded to support additional levels due to the DataStore script that modularizes the app thus allowing it to be easily maintained.
